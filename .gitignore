@@ -46,3 +46,4 @@ Thumbs.db
 # Turborepo & Cache
 .turbo/
 .cache/
+payshield-roadmap.md
