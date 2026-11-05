@@ -1,0 +1,9 @@
+PayShield AI Notice: Security Incident Resolved
+
+Hello {{ user_name }},
+
+Incident #{{ incident_id }} has been officially resolved.
+Outcome: {{ resolution_note|default('Cleared by Risk Evaluation') }}
+Resolved At: {{ resolved_at }}
+
+PayShield AI Automated Risk Defense

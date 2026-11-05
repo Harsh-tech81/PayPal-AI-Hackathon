@@ -1,0 +1,13 @@
+PayShield AI Security Alert: Account Temporarily Frozen
+
+Hello {{ user_name }},
+
+PayShield AI detected suspicious activity or failed verification challenges on your account. To safeguard your funds and identity, your account has been placed under temporary protection for {{ freeze_duration_hours|default(1) }} hour.
+
+Incident ID: {{ incident_id }}
+Trigger Reason: {{ reason|default('Multiple failed verification challenges') }}
+Frozen Until: {{ frozen_until }}
+{% if ip_address %}Source IP: {{ ip_address }}{% endif %}
+
+During this period, outgoing transactions are restricted. Access will automatically restore once the timer concludes.
+Reference: #{{ incident_id }}

@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  alert-service:
+    build:
+      context: ./services/alert-service
+      dockerfile: Dockerfile
+    container_name: payshield-alert-service
+    ports:
+      - "8005:8005"
+    env_file:
+      - .env
+    environment:
+      - ALERT_SERVICE_PORT=8005
+      - USER_SERVICE_URL=http://user-service:8001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+  escalation-service:
+    build:
+      context: ./services/escalation-service
+      dockerfile: Dockerfile
+    container_name: payshield-escalation-service
+    ports:
+      - "8006:8006"
+    env_file:
+      - .env
+    environment:
+      - ESCALATION_SERVICE_PORT=8006
+      - ALERT_SERVICE_URL=http://alert-service:8005
+      - USER_SERVICE_URL=http://user-service:8001
+      - DEFAULT_FREEZE_DURATION_HOURS=1
+    depends_on:
+      - alert-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: payshield-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+networks:
+  payshield-net:
+    driver: bridge
