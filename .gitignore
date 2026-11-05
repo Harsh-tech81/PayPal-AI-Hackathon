@@ -1,1 +1,49 @@
+# Dependency directories
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables & secrets (Protects Supabase and API keys)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Next.js & Build Outputs
+.next/
+out/
+build/
+dist/
+/generated/prisma
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing & Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# AI Agent & Assistant Temporary Directories
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Turborepo & Cache
+.turbo/
+.cache/
 payshield-roadmap.md

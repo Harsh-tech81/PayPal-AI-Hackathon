@@ -1,0 +1,27 @@
+{
+  "name": "paypal-ai-hackathon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Harsh-tech81/PayPal-AI-Hackathon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Harsh-tech81/PayPal-AI-Hackathon/issues"
+  },
+  "homepage": "https://github.com/Harsh-tech81/PayPal-AI-Hackathon#readme",
+  "description": "",
+  "devDependencies": {
+    "prisma": "^7.10.1"
+  }
+}
