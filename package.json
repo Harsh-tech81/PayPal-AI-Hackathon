@@ -1,27 +1,47 @@
 {
   "name": "paypal-ai-hackathon",
   "version": "1.0.0",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
-  },
+  "private": true,
+  "type": "module",
+  "description": "PayShield AI — Master Monorepo for PayPal AI Hackathon 2026",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "web-app"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "tsx services/transaction-service/src/index.ts",
+    "dev:services": "tsx services/user-service/src/index.ts & tsx services/transaction-service/src/index.ts & tsx services/verification-agent/src/index.ts & tsx services/risk-engine/src/index.ts & tsx services/alert-service/src/index.ts & tsx services/escalation-service/src/index.ts",
+    "dev:web": "npm --prefix web-app run dev",
+    "dev": "concurrently -n \"user,txn,verify,risk,alert,escalate,web\" -c \"blue,green,magenta,yellow,red,cyan,white\" \"npx tsx services/user-service/src/index.ts\" \"npx tsx services/transaction-service/src/index.ts\" \"npx tsx services/verification-agent/src/index.ts\" \"npx tsx services/risk-engine/src/index.ts\" \"npx tsx services/alert-service/src/index.ts\" \"npx tsx services/escalation-service/src/index.ts\" \"npm --prefix web-app run dev\"",
+    "test": "vitest run",
+    "db:push": "prisma db push --schema=database/prisma/schema.prisma",
+    "db:seed": "tsx database/seeds/seed-demo-data.ts",
+    "db:generate": "prisma generate --schema=database/prisma/schema.prisma"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Harsh-tech81/PayPal-AI-Hackathon.git"
+  "dependencies": {
+    "@fastify/cors": "^10.0.1",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "@sendgrid/mail": "^8.1.4",
+    "@types/pg": "^8.23.1",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "firebase-admin": "^12.7.0",
+    "ioredis": "^5.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.10.0",
+    "pg": "^8.23.1",
+    "prisma": "^7.10.1",
+    "twilio": "^5.3.4",
+    "zod": "^3.23.8"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Harsh-tech81/PayPal-AI-Hackathon/issues"
-  },
-  "homepage": "https://github.com/Harsh-tech81/PayPal-AI-Hackathon#readme",
-  "description": "",
   "devDependencies": {
-    "prisma": "^7.10.1"
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.0.0",
+    "concurrently": "^10.0.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }
