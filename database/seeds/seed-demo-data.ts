@@ -66,7 +66,7 @@ export async function seedDemoData() {
         isTrusted: true,
       },
     });
-      create: {
+
     // 4. Seed Past Transactions for Dashboard Showcase
     // Routine transfer - low risk
     await prisma.transaction.create({
@@ -222,6 +222,9 @@ export async function seedDemoData() {
     console.error("❌ Seed failed:", error);
   } finally {
     await prisma.$disconnect();
+    if (process.argv[1] && process.argv[1].includes("seed-demo-data")) {
+      process.exit(0);
+    }
   }
 }
 
