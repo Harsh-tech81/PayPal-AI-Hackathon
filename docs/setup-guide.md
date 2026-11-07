@@ -23,7 +23,7 @@ Key variables include:
 * `REDIS_URL`: Redis connection (graceful in-memory fallback enabled if offline)
 * `PAYPAL_CLIENT_ID` & `PAYPAL_CLIENT_SECRET`: PayPal Sandbox Developer credentials
 * `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: Twilio SMS credentials
-* `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`: SendGrid email dispatch credentials
+* `EMAIL_USER`, `EMAIL_PASS`: Nodemailer Gmail SMTP credentials (16-char App Password)
 * `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`: Firebase Admin push credentials
 * `AES_MASTER_KEY`: 32-byte hex key for AES-256-GCM vault encryption
 

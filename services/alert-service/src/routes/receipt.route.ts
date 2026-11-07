@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-import { sendEmailAlert } from "../channels/sendgrid-email.js";
+import { sendEmailAlert } from "../channels/email-channel.js";
 import prisma from "../../../../database/prisma-client.js";
 
 export async function receiptRoutes(fastify: FastifyInstance) {
@@ -99,7 +99,7 @@ export async function receiptRoutes(fastify: FastifyInstance) {
         await prisma.alertLog.create({
           data: {
             userId: body.userId || "a0000000-0000-0000-0000-000000000001",
-            channel: "sendgrid_receipt",
+            channel: "email_receipt",
             message: `Payment of ${amountFormatted} sent to ${body.recipientEmail}. Transaction ID: ${txnId}`,
             delivered: emailRes.success,
           },

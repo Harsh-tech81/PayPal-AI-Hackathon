@@ -61,18 +61,19 @@ export const userRepository = {
       const created = await prisma.user.create({
         data: {
           id,
-          email: data.email.toLowerCase(),
-          phone: data.phone,
-          fullName: data.fullName,
+          email: data.email.toLowerCase().trim(),
+          phone: data.phone ? data.phone.trim() : null,
+          fullName: data.fullName.trim(),
           passwordHash: data.passwordHash,
           kycStatus: "verified",
           riskTier: "standard",
         },
       });
+      console.log(`✅ [User Repo] Successfully persisted user to Supabase PostgreSQL: ${created.id} (${created.email})`);
       memoryUsers.set(created.email.toLowerCase(), created);
       return created;
     } catch (err: any) {
-      console.warn(`[User Repo DB Notice] create: ${err.message}, saved to memory.`);
+      console.error(`❌ [User Repo DB Error] Failed to persist user to PostgreSQL: ${err.message}`);
       memoryUsers.set(userObj.email.toLowerCase(), userObj);
       return userObj;
     }
