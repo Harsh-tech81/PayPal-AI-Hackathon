@@ -23,7 +23,7 @@ export async function sendEmailAlert(
   if (apiKey && apiKey.startsWith("SG.")) {
     try {
       const text = plainText || htmlContent.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-      const [res] = await sgMail.send({
+      const sendPromise = sgMail.send({
         to: toEmail,
         from: { email: fromEmail, name: "PayPal PayShield Security" },
         replyTo: fromEmail,
@@ -41,6 +41,10 @@ export async function sendEmailAlert(
           },
         },
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("SendGrid request timed out")), 5000)
+      );
+      const [res]: any = await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ [SendGrid Email] Real email dispatched to ${toEmail}! Status: ${res.statusCode}, Message-ID: ${res.headers["x-message-id"]}`);
       return { success: true, messageId: `sg_${res.headers["x-message-id"] || Date.now()}` };
     } catch (err: any) {

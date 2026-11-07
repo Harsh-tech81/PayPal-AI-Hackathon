@@ -18,11 +18,15 @@ export async function sendSmsAlert(toPhone: string, body: string): Promise<{ suc
 
   if (twilioClient) {
     try {
-      const msg = await twilioClient.messages.create({
+      const msgPromise = twilioClient.messages.create({
         body,
         from: fromPhone,
         to: toPhone,
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Twilio request timed out")), 5000)
+      );
+      const msg: any = await Promise.race([msgPromise, timeoutPromise]);
       console.log(`[Twilio SMS] Real SMS delivered! SID: ${msg.sid}`);
       return { success: true, messageId: msg.sid };
     } catch (err: any) {

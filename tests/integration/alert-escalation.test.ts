@@ -19,7 +19,7 @@ describe("Alert & Escalation Services Integration Tests", () => {
     expect(body.status).toBe("FROZEN");
     expect(body.isFrozen).toBe(true);
     expect(body.frozenUntil).toBeDefined();
-  });
+  }, 30000);
 
   it("POST /api/v1/alerts/send should dispatch multi-channel alert notifications", async () => {
     const res = await fastifyAlertApp.inject({
@@ -38,5 +38,5 @@ describe("Alert & Escalation Services Integration Tests", () => {
     const body = JSON.parse(res.body);
     expect(body.status).toBe("DISPATCHED");
     expect(body.channels).toBeDefined();
-  });
+  }, 30000);
 });
