@@ -3,6 +3,13 @@ node_modules/
 .pnp
 .pnp.js
 
+# Lockfiles (as requested)
+package-lock.json
+*/package-lock.json
+
+# Documentation & Implementation Notes
+docs/
+
 # Environment variables & secrets (Protects Supabase and API keys)
 .env
 .env.local
@@ -19,6 +26,7 @@ build/
 dist/
 /generated/prisma
 *.tsbuildinfo
+**/*.tsbuildinfo
 
 # Logs
 logs/
@@ -34,6 +42,13 @@ coverage/
 *.lcov
 .nyc_output
 
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
 # AI Agent & Assistant Temporary Directories
 .agents/
 .claude/
@@ -43,8 +58,10 @@ skills-lock.json
 # Operating System Files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Turborepo & Cache
 .turbo/
 .cache/
-payshield-roadmap.md
+*.tmp
+*.bak
