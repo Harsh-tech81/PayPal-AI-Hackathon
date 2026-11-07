@@ -154,4 +154,16 @@ export const api = {
     });
     return res.json();
   },
+
+  async getFreezeStatus(userId?: string) {
+    const uid = userId || (typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : "a0000000-0000-0000-0000-000000000001");
+    const res = await fetch(`${ESCALATION_SERVICE}/api/v1/escalate/status/${uid}`);
+    return res.json();
+  },
+
+  async getIncidentEvidence(incidentId: string) {
+    const res = await fetch(`${ESCALATION_SERVICE}/api/v1/escalate/evidence/${incidentId}`);
+    return res.json();
+  },
 };
+

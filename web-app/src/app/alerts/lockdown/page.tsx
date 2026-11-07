@@ -23,6 +23,22 @@ export default function LockdownPage() {
       }
       const ref = search.get("ref");
       if (ref) setIncidentRef(ref);
+
+      const userId = search.get("userId") || undefined;
+      api.getFreezeStatus(userId)
+        .then((status) => {
+          if (status && status.isFrozen === false) {
+            setUnfreezeSuccess(true);
+          } else if (status && typeof status.remainingSeconds === "number") {
+            const m = Math.floor(status.remainingSeconds / 60);
+            const s = status.remainingSeconds % 60;
+            setMinutes(m);
+            setSeconds(s);
+          }
+        })
+        .catch((err) => {
+          console.warn("[Lockdown] Could not fetch real-time freeze status:", err);
+        });
     }
   }, []);
 
@@ -39,8 +55,14 @@ export default function LockdownPage() {
 
   const handleDownloadDossier = async () => {
     try {
-      const res = await api.downloadBankReport(incidentRef);
-      const blob = new Blob([JSON.stringify(res.dossier, null, 2)], { type: "application/json" });
+      let res: any;
+      try {
+        res = await api.getIncidentEvidence(incidentRef);
+      } catch {
+        res = await api.downloadBankReport(incidentRef);
+      }
+      const payload = res.package || res.dossier || res;
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

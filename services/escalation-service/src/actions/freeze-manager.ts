@@ -37,6 +37,16 @@ export async function executeAccountFreeze(req: FreezeRequest): Promise<{
       userEmail = targetUser.email || "";
       userPhone = targetUser.phone || "";
 
+      // Duplicate Escalation Prevention: check if already actively frozen
+      if (targetUser.isFrozen && targetUser.frozenUntil && targetUser.frozenUntil > new Date()) {
+        console.log(`[FREEZE ENGINE] User ${targetUser.id} is already actively frozen until ${targetUser.frozenUntil.toISOString()}. Preventing duplicate freeze.`);
+        return {
+          frozen: true,
+          frozenUntil: targetUser.frozenUntil,
+          incidentId: `inc_active_${targetUser.id}`,
+        };
+      }
+
       await prisma.user.update({
         where: { id: targetUser.id },
         data: {

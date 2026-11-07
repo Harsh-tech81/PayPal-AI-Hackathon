@@ -1,6 +1,8 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { executeAccountFreeze } from "../actions/freeze-manager.js";
+import { executeAccountUnfreeze } from "../actions/unfreeze-manager.js";
 import { blockAttackerIp } from "../actions/ip-blocker.js";
+import prisma from "../../../../database/prisma-client.js";
 
 export async function freezeRoutes(fastify: FastifyInstance) {
   fastify.post("/api/v1/escalate/freeze", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -39,6 +41,47 @@ export async function freezeRoutes(fastify: FastifyInstance) {
     } catch (err: any) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Failed to execute account freeze", message: err.message });
+    }
+  });
+
+  fastify.get("/api/v1/escalate/status/:userId", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { userId } = request.params as { userId: string };
+      let user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+      if (!user) {
+        user = await prisma.user.findFirst({ orderBy: { createdAt: "desc" } });
+      }
+
+      if (!user) {
+        return reply.status(404).send({ error: "User not found" });
+      }
+
+      const now = new Date();
+      let isFrozen = user.isFrozen;
+      let frozenUntil = user.frozenUntil;
+      let remainingSeconds = 0;
+
+      // Reliable server-side expiration handling: auto-restore if elapsed
+      if (isFrozen && frozenUntil && now >= frozenUntil) {
+        console.log(`[ESCALATION AUTO-TIMER] Freeze duration expired for user ${user.id}. Restoring access.`);
+        await executeAccountUnfreeze(user.id, "timer_expired");
+        isFrozen = false;
+        frozenUntil = null;
+        remainingSeconds = 0;
+      } else if (isFrozen && frozenUntil) {
+        remainingSeconds = Math.max(0, Math.floor((frozenUntil.getTime() - now.getTime()) / 1000));
+      }
+
+      return reply.send({
+        userId: user.id,
+        isFrozen,
+        frozenUntil,
+        frozenReason: user.frozenReason,
+        remainingSeconds,
+      });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Failed to fetch freeze status", message: err.message });
     }
   });
 }
