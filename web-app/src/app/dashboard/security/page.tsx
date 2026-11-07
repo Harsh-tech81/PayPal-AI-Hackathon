@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShieldCheck, Smartphone, Laptop, Trash2, KeyRound, Lock, Check } from "lucide-react";
+import { ShieldCheck, Smartphone, Laptop, Trash2, KeyRound, Lock, Check, Cpu, Sparkles } from "lucide-react";
 import { api } from "../../../lib/api-client";
 
 export default function SecurityPage() {
@@ -33,88 +33,107 @@ export default function SecurityPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto animate-in fade-in duration-300">
+    <div className="space-y-8 max-w-4xl mx-auto animate-fade-in">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Security & Intent Vault Management</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Manage your personal cognitive anchors and review authenticated hardware devices.
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Hardware & Cryptographic Enclave
+        </div>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
+          Security & Intent Vault Management
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          Manage your personal cognitive memory anchors and review authenticated hardware devices.
         </p>
       </div>
 
       {/* Memory Vault Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
+
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-50 text-[#0070ba] flex items-center justify-center">
-            <KeyRound className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-50 to-blue-100 border border-blue-200/80 text-[#0070ba] flex items-center justify-center shrink-0 shadow-sm">
+            <KeyRound className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              Encrypted Intent Memory Vault
-              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                AES-256 Sealed
+            <h3 className="text-base sm:text-lg font-black text-slate-950 flex flex-wrap items-center gap-2">
+              <span>Encrypted Intent Memory Vault</span>
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
+                AES-256-GCM Sealed
               </span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              10 cognitive anchors active in isolated zero-knowledge document store.
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              10 cognitive anchors active in isolated zero-knowledge document store. Protected from credential stuffing and session theft.
             </p>
           </div>
         </div>
 
         <Link
           href="/intent-form"
-          className="py-3 px-6 rounded-full font-bold text-xs bg-black hover:bg-neutral-800 text-white shadow-sm transition flex items-center gap-2"
+          className="py-3 px-6 rounded-full font-bold text-xs bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center"
         >
-          <Lock className="w-3.5 h-3.5" /> Reconfigure Secrets
+          <Lock className="w-3.5 h-3.5 text-sky-400" />
+          <span>Reconfigure Secrets</span>
         </Link>
       </div>
 
       {/* Trusted Devices Section */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-5">
-        <div className="flex justify-between items-center">
+      <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl space-y-6">
+        <div className="flex justify-between items-center pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-base font-black text-slate-900">Active Trusted Devices</h3>
-            <p className="text-xs text-slate-500">
-              Transactions from recognized hardware bypass the cognitive challenge gate in 50ms.
+            <h3 className="text-lg font-black text-slate-950">Active Authenticated Devices</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Payments from recognized hardware bypass the cognitive challenge gate in 50ms with zero customer friction.
             </p>
           </div>
+          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+            {devices.length} Devices
+          </span>
         </div>
 
-        <div className="divide-y divide-slate-100">
-          {devices.map((dev) => {
-            const isMobile = dev.osType === "iOS" || dev.osType === "Android";
-            const Icon = isMobile ? Smartphone : Laptop;
+        {devices.length === 0 && !loading ? (
+          <div className="py-8 text-center text-xs text-slate-500">
+            No external devices authenticated. Current browser session is registered as primary.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {devices.map((dev) => {
+              const isMobile = dev.osType === "iOS" || dev.osType === "Android";
+              const Icon = isMobile ? Smartphone : Laptop;
 
-            return (
-              <div key={dev.id} className="py-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center">
-                    <Icon className="w-5 h-5" />
+              return (
+                <div key={dev.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 border border-slate-200/80 group-hover:bg-blue-50 group-hover:text-[#0070ba] transition-colors">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-950 flex items-center gap-2">
+                        <span>{dev.deviceName}</span>
+                        {dev.isTrusted && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-600" /> Trusted
+                          </span>
+                        )}
+                      </h4>
+                      <span className="text-xs font-mono text-slate-400 mt-0.5 block truncate max-w-xs sm:max-w-md">
+                        Fingerprint: {dev.deviceFingerprint}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                      {dev.deviceName}
-                      {dev.isTrusted && (
-                        <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Trusted
-                        </span>
-                      )}
-                    </h4>
-                    <span className="text-xs font-mono text-slate-400">
-                      Fingerprint: {dev.deviceFingerprint}
-                    </span>
-                  </div>
+
+                  <button
+                    onClick={() => handleRevoke(dev.id)}
+                    className="py-2 px-4 rounded-full text-xs font-bold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 hover:border-rose-600 transition-all active:scale-95 flex items-center gap-1.5 self-end sm:self-auto shadow-sm"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Revoke Access</span>
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => handleRevoke(dev.id)}
-                  className="py-2 px-4 rounded-full text-xs font-bold text-red-600 hover:text-white hover:bg-red-600 border border-red-200 transition flex items-center gap-1.5"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Revoke
-                </button>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

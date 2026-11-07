@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Shield, AlertTriangle, ArrowRight, CheckCircle2, Lock, Sparkles } from "lucide-react";
+import { Send, Shield, AlertTriangle, ArrowRight, CheckCircle2, Lock, Sparkles, Cpu, Globe, Zap, Radio } from "lucide-react";
 import { api } from "../../../lib/api-client";
 import { useVerification } from "../../../hooks/useVerification";
 import { ChallengeModal } from "../../../components/verification/ChallengeModal";
@@ -85,14 +85,18 @@ export default function SendTransactionsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-7 animate-fade-in">
       {/* Title */}
       <div className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-          Send Money Securely via PayPal
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
+          <Zap className="w-3.5 h-3.5 text-sky-500" />
+          PayPal Express Checkout Terminal
+        </div>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
+          Send Money Securely
         </h1>
-        <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-          Every transaction is analyzed by PayShield's real-time risk engine and guarded by cognitive challenge verification.
+        <p className="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-md mx-auto leading-relaxed">
+          Every transfer is scored by PayShield's real-time risk engine and guarded by cognitive episodic challenge verification.
         </p>
       </div>
 
@@ -105,45 +109,47 @@ export default function SendTransactionsPage() {
       )}
 
       {validationError && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600 flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
-          <span>{validationError}</span>
+        <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200 text-xs font-semibold text-rose-700 flex items-start gap-2.5 shadow-sm animate-fade-in">
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">{validationError}</span>
         </div>
       )}
 
-      {/* Pill Mode Switcher (User toggles evaluation mode without overwriting typed inputs) */}
+      {/* Evaluation Mode Switcher */}
       <div className="flex justify-center">
-        <div className="inline-flex p-1 rounded-full bg-slate-100 border border-slate-200">
+        <div className="inline-flex p-1.5 rounded-full bg-slate-200/70 border border-slate-300/60 shadow-inner backdrop-blur-md">
           <button
             type="button"
             onClick={() => setIsSimulatingHack(false)}
-            className={`px-5 py-2 rounded-full text-xs font-bold transition ${
+            className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
               !isSimulatingHack
-                ? "bg-white text-slate-900 shadow-sm"
+                ? "bg-white text-emerald-800 shadow-sm scale-[1.01]"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            🛡️ Standard Transfer (Domestic Bengaluru Node)
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Standard (Trusted Bengaluru Node)</span>
           </button>
           <button
             type="button"
             onClick={() => setIsSimulatingHack(true)}
-            className={`px-5 py-2 rounded-full text-xs font-bold transition ${
+            className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
               isSimulatingHack
-                ? "bg-white text-slate-900 shadow-sm"
+                ? "bg-rose-50 text-rose-800 border border-rose-200 shadow-sm scale-[1.01]"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            🚨 Anomaly Simulation (Overseas Proxy / Tor Exit)
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+            <span>Simulate Anomaly (Tor Node Proxy)</span>
           </button>
         </div>
       </div>
 
       {/* Payment Form Container */}
-      <div className="p-6 sm:p-10 rounded-3xl bg-white border border-slate-200 shadow-xl space-y-6">
+      <div className="p-7 sm:p-10 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl space-y-6">
         <form onSubmit={handleInitiateTransfer} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-2">
               Recipient Email or Phone
             </label>
             <input
@@ -151,17 +157,32 @@ export default function SendTransactionsPage() {
               value={recipientEmail}
               onChange={(e) => setRecipientEmail(e.target.value)}
               required
-              placeholder="e.g. merchant@company.com or +91 98765 43210"
-              className="w-full px-4 py-3 bg-white border border-slate-300 focus:border-[#0070ba] focus:ring-2 focus:ring-blue-100 rounded-2xl text-slate-900 font-medium text-sm outline-none transition"
+              placeholder="e.g. merchant@company.com or +1 555 234 5678"
+              className="w-full px-4 py-3.5 bg-slate-50/70 border border-slate-200/90 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-900 font-medium text-sm outline-none transition-all duration-200 placeholder:text-slate-400"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Transfer Amount (USD)
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                Transfer Amount (USD)
+              </label>
+              {/* Quick Select Chips */}
+              <div className="flex items-center gap-1.5">
+                {[50, 250, 1200].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(String(preset))}
+                    className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-blue-50 hover:text-[#0070ba] text-slate-600 border border-slate-200 transition"
+                  >
+                    ${preset}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="relative">
-              <span className="absolute left-4 top-3 text-slate-400 font-bold">$</span>
+              <span className="absolute left-4 top-3.5 text-slate-400 font-black text-xl">$</span>
               <input
                 type="number"
                 step="0.01"
@@ -170,38 +191,41 @@ export default function SendTransactionsPage() {
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-3 bg-white border border-slate-300 focus:border-[#0070ba] focus:ring-2 focus:ring-blue-100 rounded-2xl text-slate-900 font-black text-xl outline-none transition"
+                className="w-full pl-9 pr-4 py-3.5 bg-slate-50/70 border border-slate-200/90 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 font-black text-2xl outline-none transition-all duration-200"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-              Transfer Note (Optional)
+            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-2">
+              Transfer Note / Memo (Optional)
             </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this payment for? (optional)"
-              className="w-full px-4 py-3 bg-white border border-slate-300 focus:border-[#0070ba] focus:ring-2 focus:ring-blue-100 rounded-2xl text-slate-900 font-medium text-sm outline-none transition"
+              className="w-full px-4 py-3.5 bg-slate-50/70 border border-slate-200/90 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-900 font-medium text-sm outline-none transition-all duration-200 placeholder:text-slate-400"
             />
           </div>
 
-          {/* Centered Action Button */}
+          {/* Action Button */}
           <div className="pt-4 border-t border-slate-100 flex flex-col items-center">
             <button
               type="submit"
               disabled={loading || !recipientEmail.trim() || !amount}
-              className="w-full py-4 rounded-full font-bold text-base bg-[#0070ba] hover:bg-[#005ea6] active:scale-[0.99] text-white shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition disabled:opacity-50"
+              className="w-full py-4 rounded-full font-bold text-base bg-gradient-to-r from-[#003087] via-[#0070ba] to-[#005ea6] hover:brightness-110 active:scale-[0.99] text-white shadow-glow-sm hover:shadow-glow-md flex items-center justify-center gap-2.5 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none group"
             >
-              <span className="font-serif italic font-black text-xl">PayPal</span>
-              <span>Checkout {amount && !isNaN(parseFloat(amount)) ? `($${parseFloat(amount).toFixed(2)})` : ""}</span>
+              <span className="font-serif italic font-black text-2xl tracking-tighter">PayPal</span>
+              <span className="font-bold text-base tracking-tight">
+                Authorize Payment {amount && !isNaN(parseFloat(amount)) ? `($${parseFloat(amount).toFixed(2)})` : ""}
+              </span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
 
-            <p className="text-center text-[11px] text-slate-500 mt-3 flex items-center justify-center gap-1.5 font-medium">
+            <p className="text-center text-[11px] text-slate-500 mt-3.5 flex items-center justify-center gap-1.5 font-medium">
               <Lock className="w-3.5 h-3.5 text-[#0070ba]" />
-              Protected by PayShield AI Cognitive Interception Protocol
+              Guarded by PayShield AI Cognitive Interception Protocol
             </p>
           </div>
         </form>
