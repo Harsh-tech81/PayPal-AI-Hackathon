@@ -20,7 +20,7 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
 
   const { loginUser } = useAuth();
 
-  // Step 1: Submit details and send real OTP via Twilio / SendGrid
+  // Step 1: Submit details and send real OTP via Twilio SMS / Gmail SMTP
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agree) {
@@ -102,7 +102,14 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
       {error && (
         <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-          <span>{error}</span>
+          <div>
+            <span>{error}</span>
+            {error.toLowerCase().includes("already exists") && (
+              <a href="/login" className="block text-[#0070ba] font-bold underline mt-1">
+                Click here to Log In directly &rarr;
+              </a>
+            )}
+          </div>
         </div>
       )}
 
@@ -228,8 +235,7 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
             </div>
             <h3 className="text-lg font-black text-slate-900">Enter Security Code</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-              We sent a 6-digit verification code to <span className="font-bold text-slate-800">{email}</span> and{" "}
-              <span className="font-bold text-slate-800">{phone}</span>.
+              We dispatched a verification code to your phone SMS (<span className="font-bold text-slate-800">{phone}</span>) and email (<span className="font-bold text-slate-800">{email}</span>).
             </p>
           </div>
 
@@ -253,8 +259,8 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
               className="w-full text-center py-4 text-2xl font-mono font-black tracking-[10px] bg-slate-50 border border-slate-300 focus:border-[#0070ba] focus:ring-2 focus:ring-blue-100 rounded-2xl text-slate-900 outline-none transition"
             />
             <p className="text-[11px] text-slate-500 text-center mt-2 leading-relaxed">
-              🔒 Enter the 6-digit code delivered to your email inbox and phone SMS.<br />
-              <span className="text-amber-600 font-medium">Tip: If not in your primary email inbox, check your Gmail <strong>Spam / Junk</strong> folder.</span>
+              🔒 Enter <strong>either</strong> the 6-digit code received on your phone SMS <strong>or</strong> your email inbox.<br />
+              <span className="text-emerald-700 font-semibold">Both channels are active and accepted instantly.</span>
             </p>
           </div>
 

@@ -113,7 +113,7 @@ export default function LockdownPage() {
           </div>
           <div className="flex items-center gap-2 text-emerald-700 font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Multi-channel SMS & Email dispatched via Twilio & SendGrid</span>
+            <span>Multi-channel SMS & Email dispatched via Twilio & Gmail</span>
           </div>
           <div className="flex items-center gap-2 text-emerald-700 font-medium">
             <CheckCircle2 className="w-4 h-4 shrink-0" />

@@ -13,7 +13,7 @@ When a user's PayPal-linked device or account is compromised, traditional authen
 1. **Zero-Knowledge Memory Vault**: During onboarding, users deposit 10 personal memory anchors encrypted at rest with **AES-256-GCM** in an isolated **MongoDB** vault, physically separated from financial ledgers in **PostgreSQL**.
 2. **Real-Time 10-Second Cognitive Interception**: High-risk payments ($\ge 0.30$) are intercepted by a **LangGraph Agent** powered by **Google Gemini 1.5 Flash**, formulating an unpredictable dynamic riddle within $< 400\text{ms}$.
 3. **10-Second Challenge Window**: A legitimate human recalls and types their intimate memory in 5–8 seconds, whereas a remote hacker or phishing bot cannot research personal memories in 10 seconds.
-4. **Autonomous Multi-Channel Defense**: If verification fails or hits 0.0s, the system executes an atomic **1-hour account freeze**, voids the PayPal order, dispatches multi-channel alerts (**Twilio SMS**, **SendGrid HTML Email**, **Firebase Push**), and exports an automated **Bank Dispute Evidence Dossier**.
+4. **Autonomous Multi-Channel Defense**: If verification fails or hits 0.0s, the system executes an atomic **1-hour account freeze**, voids the PayPal order, dispatches multi-channel alerts (**Twilio SMS**, **Nodemailer Gmail SMTP HTML Email**, **Firebase Push**), and exports an automated **Bank Dispute Evidence Dossier**.
 
 ---
 
@@ -49,7 +49,7 @@ When a user's PayPal-linked device or account is compromised, traditional authen
 | **8002** | `transaction-service`| Fastify 5, Prisma, PayPal Sandbox SDK | Transfer creation, ledger, and payment orchestrator |
 | **8003** | `verification-agent` | Fastify 5, LangGraph, Gemini 1.5 Flash, Redis | Dynamic questioning, 10s countdown, and LLM judge |
 | **8004** | `risk-engine` | Fastify 5, TypeScript Heuristics | Real-time risk scoring ($0.00-1.00$), device & geo-velocity |
-| **8005** | `alert-service` | Fastify 5, Twilio, SendGrid, Firebase | Carrier-grade SMS, HTML email, and mobile push alerts |
+| **8005** | `alert-service` | Fastify 5, Twilio, Nodemailer, Firebase | Carrier-grade SMS, HTML email, and mobile push alerts |
 | **8006** | `escalation-service` | Fastify 5, Prisma (PostgreSQL) | 1-Hour atomic freeze, unfreeze, and Bank Dispute Exporter |
 | **5432** | PostgreSQL 16 | Relational Financial DB via Prisma | Ledgers, users, devices, fraud incidents, and alert logs |
 | **27017**| MongoDB 7 | Isolated Document Vault | AES-256-GCM encrypted user memory anchors |

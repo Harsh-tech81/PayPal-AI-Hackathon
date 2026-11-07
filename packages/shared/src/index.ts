@@ -11,3 +11,6 @@ export * from "./schemas/verification.schema.js";
 
 // Types
 export * from "./types/index.js";
+
+// Email Gateway (Nodemailer Gmail SMTP)
+export * from "./email/unified-email.js";

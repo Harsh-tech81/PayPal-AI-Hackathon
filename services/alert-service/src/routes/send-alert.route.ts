@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { sendSmsAlert } from "../channels/twilio-sms.js";
-import { sendEmailAlert } from "../channels/sendgrid-email.js";
+import { sendEmailAlert } from "../channels/email-channel.js";
 import { sendPushNotification } from "../channels/firebase-push.js";
 import prisma from "../../../../database/prisma-client.js";
 
