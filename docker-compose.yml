@@ -1,57 +1,149 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  # 1. In-Memory Cache (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: payshield-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+  # 2. Fastify Microservices (Connected to Cloud Supabase & MongoDB Atlas)
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: payshield-user-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+  transaction-service:
+    build:
+      context: .
+      dockerfile: services/transaction-service/Dockerfile
+    container_name: payshield-transaction-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - RISK_ENGINE_URL=http://risk-engine:8004
+      - VERIFICATION_AGENT_URL=http://verification-agent:8003
+    depends_on:
+      - risk-engine
+      - verification-agent
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+  verification-agent:
+    build:
+      context: .
+      dockerfile: services/verification-agent/Dockerfile
+    container_name: payshield-verification-agent
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=${MONGODB_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - ESCALATION_SERVICE_URL=http://escalation-service:8006
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
+  risk-engine:
+    build:
+      context: .
+      dockerfile: services/risk-engine/Dockerfile
+    container_name: payshield-risk-engine
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+    restart: unless-stopped
+    networks:
+      - payshield-net
+
   alert-service:
     build:
-      context: ./services/alert-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/alert-service/Dockerfile
     container_name: payshield-alert-service
     ports:
       - "8005:8005"
-    env_file:
-      - .env
     environment:
+      - PORT=8005
       - ALERT_SERVICE_PORT=8005
-      - USER_SERVICE_URL=http://user-service:8001
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8005/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
     restart: unless-stopped
     networks:
       - payshield-net
 
   escalation-service:
     build:
-      context: ./services/escalation-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: services/escalation-service/Dockerfile
     container_name: payshield-escalation-service
     ports:
       - "8006:8006"
-    env_file:
-      - .env
     environment:
+      - PORT=8006
       - ESCALATION_SERVICE_PORT=8006
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
       - ALERT_SERVICE_URL=http://alert-service:8005
       - USER_SERVICE_URL=http://user-service:8001
       - DEFAULT_FREEZE_DURATION_HOURS=1
     depends_on:
       - alert-service
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8006/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
     restart: unless-stopped
     networks:
       - payshield-net
 
-  redis:
-    image: redis:7-alpine
-    container_name: payshield-redis
+  # 3. Next.js 15 Web App
+  web-app:
+    build:
+      context: .
+      dockerfile: web-app/Dockerfile
+    container_name: payshield-web-app
     ports:
-      - "6379:6379"
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NEXT_PUBLIC_USER_SERVICE_URL=http://localhost:8001
+      - NEXT_PUBLIC_TRANSACTION_SERVICE_URL=http://localhost:8002
+      - NEXT_PUBLIC_VERIFICATION_AGENT_URL=http://localhost:8003
+      - NEXT_PUBLIC_ALERT_SERVICE_URL=http://localhost:8005
+      - NEXT_PUBLIC_ESCALATION_SERVICE_URL=http://localhost:8006
+    depends_on:
+      - user-service
+      - transaction-service
+      - verification-agent
     restart: unless-stopped
     networks:
       - payshield-net

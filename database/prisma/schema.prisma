@@ -1,9 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client"
-  output   = "../../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -11,84 +7,113 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  fullName     String    @map("full_name")
-  phoneNumber  String?   @map("phone_number")
-  salt         String
-  isActive     Boolean   @default(true) @map("is_active")
-  isFrozen     Boolean   @default(false) @map("is_frozen")
-  frozenUntil  DateTime? @map("frozen_until")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
-
-  devices      Device[]
-  transactions Transaction[]
+  id                  String                @id @default(uuid())
+  email               String                @unique
+  phone               String?               @unique
+  fullName            String
+  passwordHash        String
+  kycStatus           String                @default("pending")
+  riskTier            String                @default("standard")
+  isFrozen            Boolean               @default(false)
+  frozenUntil         DateTime?
+  frozenReason        String?
+  intentFormCompleted Boolean               @default(false)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  devices             Device[]
+  sentTransactions    Transaction[]         @relation("SentTxns")
+  receivedTransactions Transaction[]        @relation("ReceivedTxns")
+  fraudIncidents      FraudIncident[]
+  alertLogs           AlertLog[]
 
   @@map("users")
 }
 
 model Device {
   id                String   @id @default(uuid())
-  userId            String   @map("user_id")
-  deviceFingerprint String   @map("device_fingerprint")
-  deviceName        String   @map("device_name")
-  ipAddress         String?  @map("ip_address")
-  userAgent         String?  @map("user_agent")
-  isTrusted         Boolean  @default(true) @map("is_trusted")
-  lastSeen          DateTime @default(now()) @map("last_seen")
-  createdAt         DateTime @default(now()) @map("created_at")
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceName        String
+  deviceFingerprint String   @unique
+  osType            String   @default("unknown")
+  isTrusted         Boolean  @default(false)
+  lastUsedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([deviceFingerprint])
   @@map("devices")
 }
 
 model Transaction {
-  id                String   @id @default(uuid())
-  senderId          String   @map("sender_id")
-  recipientEmail    String   @map("recipient_email")
-  amount            Decimal  @db.Decimal(12, 2)
-  currency          String   @default("USD")
-  status            String   @default("PENDING")
-  riskScore         Float    @default(0.0) @map("risk_score")
-  ipAddress         String?  @map("ip_address")
-  deviceFingerprint String?  @map("device_fingerprint")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                 String                @id @default(uuid())
+  senderId           String
+  receiverId         String?
+  recipientEmail     String?
+  sender             User                  @relation("SentTxns", fields: [senderId], references: [id])
+  receiver           User?                 @relation("ReceivedTxns", fields: [receiverId], references: [id])
+  amount             Decimal               @db.Decimal(15, 2)
+  currency           String                @default("USD")
+  description        String?
+  status             String                @default("pending") // pending, verifying, approved, rejected, frozen, voided
+  riskScore          Float?
+  verificationMethod String?               // auto, genai_challenge
+  ipAddress          String?
+  createdAt          DateTime              @default(now())
+  attempts           VerificationAttempt[]
+  incidents          FraudIncident[]
 
-  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
-  @@index([senderId])
   @@map("transactions")
 }
 
-model FraudIncident {
-  id              String    @id @default(uuid())
-  transactionId   String    @map("transaction_id")
-  userId          String    @map("user_id")
-  riskScore       Float     @map("risk_score")
-  triggerRules    String?   @map("trigger_rules")
-  status          String    @default("INVESTIGATING")
-  reportedToBank  Boolean   @default(false) @map("reported_to_bank")
-  bankReferenceId String?   @map("bank_reference_id")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  resolvedAt      DateTime? @map("resolved_at")
+model VerificationAttempt {
+  id              String      @id @default(uuid())
+  transactionId   String
+  transaction     Transaction @relation(fields: [transactionId], references: [id])
+  questionAsked   String
+  answerSubmitted String?
+  isCorrect       Boolean
+  confidence      Float
+  responseTimeMs  Int
+  createdAt       DateTime    @default(now())
 
-  @@index([transactionId])
-  @@index([userId])
+  @@map("verification_attempts")
+}
+
+model FraudIncident {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  transactionId   String?
+  transaction     Transaction? @relation(fields: [transactionId], references: [id])
+  incidentType    String       // failed_verification, timeout_lockout
+  severity        String       @default("high")
+  attackerIp      String?
+  forensicData    Json?
+  status          String       @default("open") // open, investigated, resolved
+  reportedToBank  Boolean      @default(false)
+  bankReferenceId String?
+  createdAt       DateTime     @default(now())
+
   @@map("fraud_incidents")
 }
 
-model BlockedIp {
+model AlertLog {
   id        String   @id @default(uuid())
-  ipAddress String   @unique @map("ip_address")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  channel   String   // sms, email, push
+  message   String
+  delivered Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("alert_logs")
+}
+
+model BlockedIp {
+  id        String    @id @default(uuid())
+  ipAddress String    @unique
   reason    String
-  blockedAt DateTime @default(now()) @map("blocked_at")
-  expiresAt DateTime @map("expires_at")
+  blockedAt DateTime  @default(now())
+  expiresAt DateTime?
 
   @@map("blocked_ips")
 }
