@@ -1,8 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { userRepository } from "../repositories/user.repository.js";
-import { hashPassword, verifyPassword, signToken, RegisterUserSchema, LoginUserSchema } from "@payshield/shared";
+import { hashPassword, verifyPassword, signToken, RegisterUserSchema, LoginUserSchema, sendUnifiedEmail } from "@payshield/shared";
 import twilio from "twilio";
-import sgMail from "@sendgrid/mail";
 
 // In-Memory OTP Store: email -> { otp, expiresAt, phone, hasTwilioVerify, trialTemplateUsed }
 const otpStore = new Map<string, { otp: string; expiresAt: number; phone?: string; hasTwilioVerify?: boolean; trialTemplateUsed?: boolean }>();
@@ -28,24 +27,8 @@ function getTwilioClient(): { client: any; fromPhone: string; verifyServiceSid?:
   return null;
 }
 
-// Helper: Lazy initialization of SendGrid
-function initSendGrid(): { ready: boolean; fromEmail: string } {
-  const sgApiKey = process.env.SENDGRID_API_KEY;
-  const fromEmail = process.env.SENDGRID_FROM_EMAIL || "security@payshield.ai";
-
-  if (sgApiKey && sgApiKey.startsWith("SG.") && !sgApiKey.includes("your_sendgrid")) {
-    try {
-      sgMail.setApiKey(sgApiKey.trim());
-      return { ready: true, fromEmail: fromEmail.trim() };
-    } catch (err: any) {
-      console.warn("[SendGrid OTP] API Key warning:", err.message);
-    }
-  }
-  return { ready: false, fromEmail };
-}
-
 export async function authRoutes(fastify: FastifyInstance) {
-  // 1. Send OTP (SMS via Twilio Verify/Messaging + Email via SendGrid)
+  // 1. Send OTP (SMS via Twilio Verify/Messaging + Email via Nodemailer Gmail SMTP)
   fastify.post("/api/v1/auth/send-otp", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { email, phone } = request.body as { email: string; phone?: string };
@@ -54,6 +37,16 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const normalizedEmail = email.toLowerCase().trim();
+
+      // Early check: Prevent duplicate registration attempts if email already exists in Supabase
+      const existingUser = await userRepository.findByEmail(normalizedEmail);
+      if (existingUser) {
+        return reply.status(409).send({
+          error: "An account with this email address already exists. Please Log In directly.",
+          alreadyRegistered: true,
+        });
+      }
+
       let otp = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
       let isTrialTemplate = false;
@@ -131,89 +124,85 @@ export async function authRoutes(fastify: FastifyInstance) {
         trialTemplateUsed: isTrialTemplate,
       });
 
-      console.log(`[PAYSHIELD AUTH] 2FA dispatched for: ${normalizedEmail} (Phone: ${formattedPhone || "None"}, Code: ${otp})`);
+      console.log(`\n======================================================`);
+      console.log(`🔐 [PAYSHIELD 2FA DISPATCH]`);
+      console.log(`   • Recipient Email : ${normalizedEmail}`);
+      console.log(`   • Phone Number    : ${formattedPhone}`);
+      if (hasTwilioVerify) {
+        console.log(`   📱 Phone SMS      : Carrier 2FA SMS dispatched by Twilio Verify.`);
+      }
+      console.log(`   📧 Email Inbox    : Verification Code sent -> [ ${otp} ]`);
+      console.log(`   💡 NOTE           : You can enter EITHER your SMS code OR your Email code!`);
+      console.log(`======================================================\n`);
 
-      // 2. Dispatch SendGrid Email with High-Deliverability Headers
+      // 2. Dispatch Email via Nodemailer Gmail SMTP (Direct Primary Inbox Delivery)
       let emailDispatched = false;
       let emailError: string | null = null;
-      const sgConfig = initSendGrid();
 
-      if (sgConfig.ready) {
-        try {
-          await sgMail.send({
-            to: normalizedEmail,
-            from: { email: sgConfig.fromEmail, name: "PayPal PayShield Security" },
-            replyTo: sgConfig.fromEmail,
-            subject: `🔐 Your PayPal Verification Code: ${otp}`,
-            text: `Your PayPal PayShield verification code is: ${otp}. Valid for 10 minutes. If you did not request this, please ignore this email. Check your spam/junk folder if not in primary inbox.`,
-            html: `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="utf-8">
-                <style>
-                  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }
-                  .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-                  .header { border-bottom: 2px solid #0070ba; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
-                  .code-box { background: #f1f5f9; padding: 24px; border-radius: 12px; text-align: center; margin: 24px 0; border: 1px dashed #cbd5e1; }
-                  .code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #003087; font-family: monospace; }
-                  .footer { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 24px; border-top: 1px solid #edf2f7; padding-top: 16px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h2 style="margin: 0; color: #003087; font-size: 24px; font-weight: 900;">Pay<span style="color: #0070ba;">Pal</span></h2>
-                    <span style="font-size: 11px; font-weight: bold; color: #0070ba; background: #e0f2fe; padding: 4px 10px; border-radius: 9999px;">PayShield AI 2FA</span>
-                  </div>
-                  <h3 style="color: #1e293b; margin-top: 0;">Account Verification Code</h3>
-                  <p style="color: #475569; font-size: 14px; line-height: 1.5;">
-                    Please enter the following 6-digit security code to verify your identity and activate zero-knowledge cognitive protection on your PayPal account:
-                  </p>
-                  <div class="code-box">
-                    <div class="code">${otp}</div>
-                  </div>
-                  <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
-                    ⏱️ This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
-                  </p>
-                  <div class="footer">
-                    PayPal PayShield Security Gateway • 2211 North First Street, San Jose, CA 95131
-                  </div>
+      try {
+        const mailResult = await sendUnifiedEmail({
+          to: normalizedEmail,
+          subject: `🔐 Your PayPal Verification Code: ${otp}`,
+          text: `Your PayPal PayShield verification code is: ${otp}. Valid for 10 minutes. If you did not request this, please ignore this email. Check your spam/junk folder if not in primary inbox.`,
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc; color: #0f172a; margin: 0; padding: 24px; }
+                .container { max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                .header { border-bottom: 2px solid #0070ba; padding-bottom: 16px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; }
+                .code-box { background: #f1f5f9; padding: 24px; border-radius: 12px; text-align: center; margin: 24px 0; border: 1px dashed #cbd5e1; }
+                .code { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #003087; font-family: monospace; }
+                .footer { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 24px; border-top: 1px solid #edf2f7; padding-top: 16px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2 style="margin: 0; color: #003087; font-size: 24px; font-weight: 900;">Pay<span style="color: #0070ba;">Pal</span></h2>
+                  <span style="font-size: 11px; font-weight: bold; color: #0070ba; background: #e0f2fe; padding: 4px 10px; border-radius: 9999px;">PayShield AI 2FA</span>
                 </div>
-              </body>
-              </html>
-            `,
-            headers: {
-              "X-Priority": "1",
-              "Importance": "high",
-              "X-MSMail-Priority": "High",
-            },
-            mailSettings: {
-              bypassListManagement: {
-                enable: true,
-              },
-            },
-          });
+                <h3 style="color: #1e293b; margin-top: 0;">Account Verification Code</h3>
+                <p style="color: #475569; font-size: 14px; line-height: 1.5;">
+                  Please enter the following 6-digit security code to verify your identity and activate zero-knowledge cognitive protection on your PayPal account:
+                </p>
+                <div class="code-box">
+                  <div class="code">${otp}</div>
+                </div>
+                <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
+                  ⏱️ This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
+                </p>
+                <div class="footer">
+                  PayPal PayShield Security Gateway • 2211 North First Street, San Jose, CA 95131
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+          fromName: "PayPal PayShield Security",
+        });
+
+        if (mailResult.success) {
           emailDispatched = true;
-          console.log(`✅ [SendGrid OTP Email] Successfully dispatched verification email to ${normalizedEmail} with code ${otp}`);
-        } catch (sgErr: any) {
-          const bodyErrors = sgErr.response?.body?.errors;
-          emailError = bodyErrors && bodyErrors.length > 0 ? bodyErrors[0].message : sgErr.message;
-          console.error(`⚠️ [SendGrid OTP Email Error] ${emailError}`);
+          console.log(`✅ [Unified Email] OTP email delivered to ${normalizedEmail} via ${mailResult.provider}!`);
+        } else {
+          emailError = mailResult.error || "Email delivery failed";
         }
-      } else {
-        emailError = "SendGrid API key not active in environment.";
-        console.warn(`[SendGrid OTP Notice] ${emailError}`);
+      } catch (nmErr: any) {
+        emailError = nmErr.message;
+        console.error(`⚠️ [Unified Email Error] ${nmErr.message}`);
       }
 
       // If both outbound channels failed, return diagnostic failure
       if (!emailDispatched && !smsDispatched) {
         return reply.status(502).send({
-          error: "Failed to dispatch verification code via Twilio or SendGrid",
+          error: "Failed to dispatch verification code via Twilio or Email gateway",
           emailError: emailError || "Email failed",
           smsError: smsError || "SMS failed",
           message: emailError
-            ? `SendGrid: ${emailError}`
+            ? `Email: ${emailError}`
             : smsError
             ? `Twilio: ${smsError}`
             : "Failed to dispatch verification code.",
@@ -257,21 +246,23 @@ export async function authRoutes(fastify: FastifyInstance) {
             .verificationChecks.create({ to: record.phone, code: submittedCode });
           if (check.status === "approved") {
             isVerified = true;
-            console.log(`✅ [Twilio Verify Check] Code approved for ${record.phone}!`);
+            console.log(`✅ [Twilio Verify Check] Phone SMS code APPROVED for ${record.phone}!`);
           }
         } catch (vErr: any) {
           console.warn("[Twilio Verify Check Notice]:", vErr.message);
         }
       }
 
-      // Check 2: SendGrid Email OTP
+      // Check 2: Email OTP
       if (!isVerified && record && record.otp === submittedCode && record.expiresAt > Date.now()) {
         isVerified = true;
+        console.log(`✅ [Email Security Check] Email code ${submittedCode} APPROVED for ${normalizedEmail}!`);
       }
 
       // Check 3: Twilio trial template fallback code (482913)
       if (!isVerified && (record?.trialTemplateUsed || submittedCode === "482913") && (record ? record.expiresAt > Date.now() : true)) {
         isVerified = true;
+        console.log(`✅ [Security Check] Fallback code APPROVED for ${normalizedEmail}!`);
       }
 
       if (isVerified) {
