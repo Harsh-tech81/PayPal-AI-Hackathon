@@ -69,6 +69,15 @@ export const api = {
     return safeJson(res);
   },
 
+  async passkeyLogin(data: { credentialId?: string; email?: string }) {
+    const res = await fetch(`${USER_SERVICE}/api/v1/auth/passkey-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return safeJson(res);
+  },
+
   async getProfile() {
     const res = await fetch(`${USER_SERVICE}/api/v1/users/me`, {
       headers: getAuthHeaders(),

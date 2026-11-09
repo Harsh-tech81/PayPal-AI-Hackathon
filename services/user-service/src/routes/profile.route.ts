@@ -57,4 +57,24 @@ export async function profileRoutes(fastify: FastifyInstance) {
       return reply.status(500).send({ error: "Failed to unfreeze user in user-service" });
     }
   });
+
+  // Fast freeze status check hook for Transaction Service
+  fastify.get("/api/v1/users/check-status/:userId", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { userId } = request.params as { userId: string };
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return reply.send({ isFrozen: false });
+      }
+      const isFrozen = Boolean(user.isFrozen && (!user.frozenUntil || new Date(user.frozenUntil) > new Date()));
+      return reply.send({
+        userId: user.id,
+        isFrozen,
+        frozenUntil: user.frozenUntil,
+        frozenReason: user.frozenReason,
+      });
+    } catch {
+      return reply.send({ isFrozen: false });
+    }
+  });
 }

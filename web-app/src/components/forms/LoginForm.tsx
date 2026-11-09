@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Lock, Mail, ArrowRight, AlertCircle, RefreshCw, KeyRound, Shield } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle, RefreshCw, KeyRound, Shield, Fingerprint } from "lucide-react";
 import { api } from "../../lib/api-client";
 import { useAuth } from "../../hooks/useAuth";
+import { verifyBiometricPasskey, getStoredBiometricCredential } from "../../lib/webauthn";
 
 export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { loginUser } = useAuth();
@@ -30,6 +32,37 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
       setError(err.message || "Failed to reach User Service");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasskeyLogin = async () => {
+    setPasskeyLoading(true);
+    setError(null);
+
+    try {
+      const stored = getStoredBiometricCredential();
+      const verifyRes = await verifyBiometricPasskey();
+      if (!verifyRes.success) {
+        setError(verifyRes.error || "Biometric passkey authentication was cancelled or failed.");
+        setPasskeyLoading(false);
+        return;
+      }
+
+      const res = await api.passkeyLogin({
+        email: email.trim() || undefined,
+        credentialId: stored?.id,
+      });
+
+      if (res.token && res.user) {
+        loginUser(res.token, res.user);
+        if (onLoginSuccess) onLoginSuccess();
+      } else {
+        setError(res.error || "No account found matching this passkey. Please sign in with password first.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to authenticate with passkey.");
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -97,6 +130,36 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
             <>
               <span>Log In to PayPal</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="relative my-4 pt-1">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-slate-200/80" />
+        </div>
+        <div className="relative flex justify-center text-[10px] uppercase">
+          <span className="bg-white/95 px-3 text-slate-400 font-black tracking-wider">Or Fast Biometric Access</span>
+        </div>
+      </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={handlePasskeyLogin}
+          disabled={loading || passkeyLoading}
+          className="w-full py-3.5 px-4 rounded-full font-bold text-xs bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-[#0070ba] border border-blue-200/90 shadow-sm transition-all duration-200 flex items-center justify-center gap-2.5 active:scale-[0.99] disabled:opacity-50 group"
+        >
+          {passkeyLoading ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin text-[#0070ba]" />
+              <span>Scanning Biometrics on Device...</span>
+            </>
+          ) : (
+            <>
+              <Fingerprint className="w-4 h-4 text-[#0070ba] group-hover:scale-110 transition-transform" />
+              <span>Sign In with Passkey / Fingerprint</span>
             </>
           )}
         </button>

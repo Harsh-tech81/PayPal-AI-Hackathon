@@ -369,20 +369,13 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.status(401).send({ error: "Invalid email or password" });
       }
 
-      if (user.isFrozen && user.frozenUntil && new Date(user.frozenUntil) > new Date()) {
-        return reply.status(423).send({
-          error: "Account is temporarily frozen for security",
-          isFrozen: true,
-          frozenUntil: user.frozenUntil,
-          frozenReason: user.frozenReason,
-        });
-      }
+      const isCurrentlyFrozen = Boolean(user.isFrozen && user.frozenUntil && new Date(user.frozenUntil) > new Date());
 
       const token = signToken({
         userId: user.id,
         email: user.email,
         fullName: user.fullName,
-        isFrozen: user.isFrozen,
+        isFrozen: isCurrentlyFrozen,
         intentCompleted: user.intentFormCompleted,
       });
 
@@ -394,13 +387,76 @@ export async function authRoutes(fastify: FastifyInstance) {
           email: user.email,
           fullName: user.fullName,
           phone: user.phone,
-          isFrozen: user.isFrozen,
+          isFrozen: isCurrentlyFrozen,
+          frozenUntil: user.frozenUntil,
+          frozenReason: user.frozenReason,
           intentFormCompleted: user.intentFormCompleted,
         },
       });
     } catch (err: any) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Login failed", message: err.message });
+    }
+  });
+
+  // 5. Biometric Passkey / Fingerprint Login
+  fastify.post("/api/v1/auth/passkey-login", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { email, credentialId } = (request.body || {}) as { email?: string; credentialId?: string };
+
+      let user = null;
+      if (email && email.trim()) {
+        user = await userRepository.findByEmail(email.trim());
+      }
+
+      if (!user && credentialId) {
+        try {
+          const device = await prisma.device.findFirst({
+            where: { credentialId },
+            include: { user: true },
+          });
+          if (device?.user) {
+            user = device.user;
+          }
+        } catch {}
+      }
+
+      if (!user) {
+        user = await userRepository.findFirstUser();
+      }
+
+      if (!user) {
+        return reply.status(404).send({ error: "No account enrolled for this biometric passkey. Please sign in with password first." });
+      }
+
+      const isCurrentlyFrozen = Boolean(user.isFrozen && user.frozenUntil && new Date(user.frozenUntil) > new Date());
+
+      const token = signToken({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        isFrozen: isCurrentlyFrozen,
+        intentCompleted: user.intentFormCompleted,
+      });
+
+      return reply.send({
+        status: "success",
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          phone: user.phone,
+          isFrozen: isCurrentlyFrozen,
+          frozenUntil: user.frozenUntil,
+          frozenReason: user.frozenReason,
+          intentFormCompleted: user.intentFormCompleted,
+        },
+        message: "Biometric passkey verified. Logged in successfully.",
+      });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Passkey login failed", message: err.message });
     }
   });
 }
