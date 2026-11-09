@@ -86,10 +86,11 @@ export const api = {
   },
 
   async revokeDevice(deviceId: string) {
+    const userId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
     const res = await fetch(`${USER_SERVICE}/api/v1/users/me/devices/revoke`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ deviceId }),
+      body: JSON.stringify({ deviceId, userId }),
     });
     return res.json();
   },

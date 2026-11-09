@@ -26,14 +26,15 @@ export async function challengeRoutes(fastify: FastifyInstance) {
         recipientEmail: body.recipientEmail,
       });
 
+      const timeoutSeconds = parseInt(process.env.LANGGRAPH_TIMEOUT_SECONDS || "10", 10);
       return reply.send({
         status: "CHALLENGE_ACTIVE",
         challengeToken: state.challengeToken,
         transactionId: state.transactionId,
         question: state.challengeRiddle,
-        timeoutSeconds: 20,
+        timeoutSeconds,
         countdownExpiresAt: state.countdownExpiresAt,
-        message: "Dynamic cognitive challenge formulated. 20-second user-friendly timer active.",
+        message: `Dynamic cognitive challenge formulated. ${timeoutSeconds}-second cognitive verification window active.`,
       });
     } catch (err: any) {
       fastify.log.error(err);

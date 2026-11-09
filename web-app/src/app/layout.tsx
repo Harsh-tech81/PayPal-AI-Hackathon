@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PayShield AI — Cognitive Payment Verification & Autonomous Defense for PayPal",
-  description: "Next-generation PayPal transaction protection powered by zero-knowledge episodic human memory and Google Gemini cognitive reasoning.",
+  description: "Next-generation PayPal transaction protection powered by zero-knowledge episodic human memory and cognitive AI security reasoning.",
 };
 
 export default function RootLayout({

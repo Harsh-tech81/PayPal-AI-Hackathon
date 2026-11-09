@@ -2,7 +2,7 @@ import prisma from "../../../../database/prisma-client.js";
 
 export async function executeAccountUnfreeze(
   userId: string,
-  resolutionMethod: "admin_override" | "video_kyc" | "timer_expired" = "video_kyc"
+  resolutionMethod: "admin_override" | "video_kyc" | "webauthn_biometric" | "timer_expired" = "webauthn_biometric"
 ): Promise<{ success: boolean; message: string }> {
   console.log(`[UNFREEZE ENGINE] Unfreezing account for user: ${userId} via ${resolutionMethod}`);
 

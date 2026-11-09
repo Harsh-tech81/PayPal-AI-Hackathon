@@ -21,13 +21,10 @@ export async function sendAlertRoutes(fastify: FastifyInstance) {
       let phone = body.phone || "";
       let email = body.userEmail || "";
 
-      // Fallback lookup: resolve genuine user contact info from database if not explicitly passed
-      if (!phone || !email || email.includes("example.com")) {
+      // Lookup genuine user contact info from database for the specified userId
+      if (body.userId && (!phone || !email || email.includes("example.com"))) {
         try {
-          let userRecord = body.userId ? await prisma.user.findUnique({ where: { id: body.userId } }) : null;
-          if (!userRecord) {
-            userRecord = await prisma.user.findFirst({ orderBy: { createdAt: "desc" } });
-          }
+          const userRecord = await prisma.user.findUnique({ where: { id: body.userId } });
           if (userRecord) {
             if (userRecord.email && !userRecord.email.includes("example.com")) email = userRecord.email;
             if (userRecord.phone && !phone) phone = userRecord.phone;
@@ -37,12 +34,17 @@ export async function sendAlertRoutes(fastify: FastifyInstance) {
         }
       }
 
-      if (!phone || phone.includes("123456")) phone = "6299912602";
-      if (!email || email.includes("example.com")) email = "saurabhkumar1542007@gmail.com";
+      if (!phone || phone.includes("123456")) {
+        phone = process.env.ALERT_FALLBACK_PHONE || "";
+      }
+      if (!email || email.includes("example.com")) {
+        email = process.env.ALERT_FALLBACK_EMAIL || "security-alerts@payshield.ai";
+      }
 
       const ref = body.incidentReference || `PS-FR-2026-${Math.floor(1000 + Math.random() * 9000)}A`;
       const amount = Number(body.amount || 1200);
-      const ip = body.attackerIp || "185.220.101.5";
+      const clientIp = (request.headers["x-forwarded-for"] as string) || request.ip || request.socket.remoteAddress || "127.0.0.1";
+      const ip = body.attackerIp && !body.attackerIp.includes("185.220.101.5") ? body.attackerIp : clientIp;
       const loc = body.location || "Overseas Proxy Node (Frankfurt / Tor)";
       const formattedAmount = `$${amount.toFixed(2)} USD`;
       const freezeTime = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
@@ -89,7 +91,7 @@ Your account has been placed into Security Lockdown for 1 hour to protect your f
               <div class="stat-row"><span style="color: #64748b;">Attacker Location:</span> <span>${loc}</span></div>
               <div class="stat-row"><span style="color: #64748b;">Attacker IP Node:</span> <strong style="font-family: monospace;">${ip}</strong></div>
               <div class="stat-row"><span style="color: #64748b;">Trigger Reason:</span> <span style="color: #b91c1c; font-weight: 600;">Cognitive Memory Verification Mismatch</span></div>
-              <div class="stat-row"><span style="color: #64748b;">PayPal Order Status:</span> <strong style="color: #059669;">VOIDED & CANCELLED (SAFE ✅)</strong></div>
+              <div class="stat-row"><span style="color: #64748b;">PayPal Order Status:</span> <strong style="color: #059669;">VOIDED & CANCELLED (SAFE)</strong></div>
               <div class="stat-row" style="border: none;"><span style="color: #64748b;">Incident Reference:</span> <strong style="font-family: monospace;">${ref}</strong></div>
             </div>
 
