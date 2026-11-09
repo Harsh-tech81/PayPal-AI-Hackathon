@@ -23,14 +23,14 @@ export async function sendUnifiedEmail(options: SendEmailOptions): Promise<SendE
   const { to, subject, html, text, fromName = "PayPal PayShield Security" } = options;
   const plainText = text || html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
-  const emailUser = process.env.EMAIL_USER || process.env.GMAIL_USER || "jayy45211@gmail.com";
+  const emailUser = process.env.EMAIL_USER || process.env.GMAIL_USER || "";
   const emailPass = process.env.EMAIL_PASS || process.env.GMAIL_PASS;
   const emailHost = process.env.EMAIL_HOST || "smtp.gmail.com";
   const emailPort = parseInt(process.env.EMAIL_PORT || "465", 10);
 
   // --- Test Runner & Offline Sandbox Bypass ---
   if (process.env.NODE_ENV === "test" || process.env.VITEST) {
-    console.log(`ℹ️ [Email Test Mock] Delivery logged for ${to}. Subject: ${subject}`);
+    console.log(`â„¹ï¸ [Email Test Mock] Delivery logged for ${to}. Subject: ${subject}`);
     return {
       success: true,
       provider: "mock",
@@ -82,14 +82,14 @@ export async function sendUnifiedEmail(options: SendEmailOptions): Promise<SendE
         },
       });
 
-      console.log(`✅ [Nodemailer Gmail SMTP] Email dispatched to ${to}! Message-ID: ${info.messageId}`);
+      console.log(`âœ… [Nodemailer Gmail SMTP] Email dispatched to ${to}! Message-ID: ${info.messageId}`);
       return {
         success: true,
         provider: isGmail ? "nodemailer_gmail" : "nodemailer_smtp",
         messageId: info.messageId,
       };
     } catch (nmErr: any) {
-      console.warn(`⚠️ [Nodemailer Notice] Error sending email via SMTP: ${nmErr.message}`);
+      console.warn(`âš ï¸ [Nodemailer Notice] Error sending email via SMTP: ${nmErr.message}`);
       return {
         success: false,
         provider: "nodemailer_gmail",
@@ -99,7 +99,7 @@ export async function sendUnifiedEmail(options: SendEmailOptions): Promise<SendE
   }
 
   // --- Development Mock Fallback ---
-  console.log(`ℹ️ [Email Dev Fallback] Delivery logged for ${to}. Subject: ${subject}`);
+  console.log(`â„¹ï¸ [Email Dev Fallback] Delivery logged for ${to}. Subject: ${subject}`);
   return {
     success: true,
     provider: "mock",
