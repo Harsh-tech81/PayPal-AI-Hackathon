@@ -24,7 +24,7 @@ export async function alertHistoryRoutes(fastify: FastifyInstance) {
             id: "alt_01",
             userId,
             channel: "SMS + Email",
-            message: "🚨 PayShield: Unauthorized transfer of $1,200.00 blocked from Overseas Proxy. Account frozen 1 hr.",
+            message: "PayShield: Unauthorized transfer of $1,200.00 blocked from Overseas Proxy. Account frozen 1 hr.",
             delivered: true,
             createdAt: new Date().toISOString(),
           },
