@@ -134,7 +134,7 @@ export function TransactionList() {
                     <td className="py-4 px-4 text-right">
                       {isFrozen ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200 shadow-sm animate-pulse">
-                          <span>❄️</span> FROZEN
+                          FROZEN
                         </span>
                       ) : tx.status === "APPROVED" || tx.status === "AUTO_APPROVED" ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">

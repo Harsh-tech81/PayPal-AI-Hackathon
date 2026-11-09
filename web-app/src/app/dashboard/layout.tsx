@@ -36,16 +36,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col relative overflow-hidden selection:bg-[#0070ba] selection:text-white">
+    <div className="h-screen bg-[#f8fafc] text-slate-900 flex flex-col relative overflow-hidden selection:bg-[#0070ba] selection:text-white">
       {/* Subtle Ambient Backing */}
       <div className="absolute inset-0 bg-radial-hero pointer-events-none opacity-60" />
       <div className="absolute inset-0 bg-grid-subtle pointer-events-none opacity-40" />
 
       <Header />
-      <div className="flex flex-1 relative z-10">
+      <div className="flex flex-1 relative z-10 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 p-6 sm:p-8 md:p-10 max-w-7xl mx-auto w-full transition-all">
-          {children}
+        <main className="flex-1 overflow-y-auto p-6 sm:p-8 md:p-10 transition-all">
+          <div className="max-w-7xl mx-auto w-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

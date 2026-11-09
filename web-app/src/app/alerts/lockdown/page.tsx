@@ -87,7 +87,7 @@ export default function LockdownPage() {
                 ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
                 : "bg-amber-50 text-amber-900 border-amber-200"
             }`}>
-              {unfreezeSuccess ? "RESTORED ✅" : `${minutes}m ${seconds < 10 ? `0${seconds}` : seconds}s`}
+              {unfreezeSuccess ? "RESTORED" : `${minutes}m ${seconds < 10 ? `0${seconds}` : seconds}s`}
             </span>
           </div>
 

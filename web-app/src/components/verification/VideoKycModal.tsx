@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Camera, CheckCircle2, ShieldCheck, RefreshCw, X, AlertCircle, Scan, Sparkles } from "lucide-react";
 import { api } from "../../lib/api-client";
 import { getSession, saveSession } from "../../lib/auth-session";
@@ -12,6 +13,7 @@ interface VideoKycModalProps {
 }
 
 export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<"camera" | "scanning" | "verified" | "error">("camera");
   const [scanProgress, setScanProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -19,6 +21,11 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   // Initialize camera when modal opens
   useEffect(() => {
@@ -117,10 +124,10 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 transition-all duration-200">
       <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-9 text-slate-900 overflow-hidden animate-fade-in">
         {/* Close Button */}
         <button
@@ -259,6 +266,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

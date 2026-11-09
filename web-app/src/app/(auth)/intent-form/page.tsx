@@ -4,12 +4,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IntentFormWizard } from "../../../components/forms/IntentFormWizard";
-import { CameraVaultGate } from "../../../components/verification/CameraVaultGate";
+import { CameraVaultGate as BiometricVaultGate } from "../../../components/verification/CameraVaultGate";
 import { X, ShieldCheck, ArrowLeft } from "lucide-react";
 
 export default function IntentFormPage() {
   const router = useRouter();
-  const [isCameraVerified, setIsCameraVerified] = useState(false);
+  const [isBiometricVerified, setIsBiometricVerified] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] py-10 px-4 flex flex-col items-center justify-center text-slate-900 relative overflow-hidden">
@@ -41,8 +41,8 @@ export default function IntentFormPage() {
       </div>
 
       <div className="w-full z-10">
-        {!isCameraVerified ? (
-          <CameraVaultGate onVerified={() => setIsCameraVerified(true)} />
+        {!isBiometricVerified ? (
+          <BiometricVaultGate onVerified={() => setIsBiometricVerified(true)} />
         ) : (
           <IntentFormWizard onCompleted={() => router.push("/dashboard")} />
         )}

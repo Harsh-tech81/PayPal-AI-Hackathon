@@ -9,7 +9,7 @@ export function Header() {
   const { user, logoutUser } = useAuth();
 
   return (
-    <header className="h-20 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 transition-all">
+    <header className="h-20 shrink-0 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 transition-all">
       {/* Brand & Left Navigation */}
       <div className="flex items-center gap-8">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">

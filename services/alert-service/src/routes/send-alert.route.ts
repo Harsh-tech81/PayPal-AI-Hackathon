@@ -47,7 +47,7 @@ export async function sendAlertRoutes(fastify: FastifyInstance) {
       const formattedAmount = `$${amount.toFixed(2)} USD`;
       const freezeTime = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 
-      const smsText = `🚨 PayShield Alert: An unauthorized transfer of ${formattedAmount} was blocked on your PayPal account from IP ${ip} (${loc}). Your account has been temporarily FROZEN for 1 hour to protect your funds. Incident Ref: ${ref}`;
+      const smsText = `PayShield Alert: An unauthorized transfer of ${formattedAmount} was blocked on your PayPal account from IP ${ip} (${loc}). Your account has been temporarily FROZEN for 1 hour to protect your funds. Incident Ref: ${ref}`;
       
       const plainText = `PayPal PayShield Security Interception Notice:
 An unauthorized transfer of ${formattedAmount} was intercepted on your PayPal account from ${loc} (IP: ${ip}) on ${freezeTime}.
@@ -78,7 +78,7 @@ Your account has been placed into Security Lockdown for 1 hour to protect your f
               <span style="font-size: 11px; font-weight: bold; color: #ef4444; background: #fee2e2; padding: 4px 10px; border-radius: 6px;">PayShield Interception</span>
             </div>
             
-            <span class="badge">🚨 UNAUTHORIZED TRANSACTION BLOCKED & ACCOUNT FROZEN</span>
+            <span class="badge">UNAUTHORIZED TRANSACTION BLOCKED & ACCOUNT FROZEN</span>
             
             <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0 0 16px 0;">
               Our PayShield AI Cognitive Verification Agent intercepted an unauthorized transfer on your PayPal account before any funds left your balance.
@@ -114,8 +114,8 @@ Your account has been placed into Security Lockdown for 1 hour to protect your f
       // Concurrently dispatch across all 3 channels
       const [smsRes, emailRes, pushRes] = await Promise.allSettled([
         sendSmsAlert(phone, smsText),
-        sendEmailAlert(email, `🚨 PayShield Security Alert: Incident ${ref}`, html, plainText),
-        sendPushNotification("🚨 Security Interception", `Unauthorized transfer of ${formattedAmount} blocked. Account frozen for 1 hr.`),
+        sendEmailAlert(email, `PayShield Security Alert: Incident ${ref}`, html, plainText),
+        sendPushNotification("Security Interception", `Unauthorized transfer of ${formattedAmount} blocked. Account frozen for 1 hr.`),
       ]);
 
       // Record to Prisma PostgreSQL if available

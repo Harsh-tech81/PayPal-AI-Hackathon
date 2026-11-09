@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ShieldCheck, Lock, CheckCircle2, X, AlertCircle, Sparkles, Brain, Cpu, ArrowRight } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ShieldCheck, Lock, CheckCircle2, X, AlertCircle, Sparkles, Brain, Cpu, ArrowRight, Loader2 } from "lucide-react";
 import { VerificationChallengeData } from "../../hooks/useVerification";
 
 interface ChallengeModalProps {
@@ -21,12 +22,18 @@ export function ChallengeModal({
   onSuccess,
   onFraudLockdown,
 }: ChallengeModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const startTimeRef = useRef<number>(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !challengeData) return;
@@ -47,29 +54,29 @@ export function ChallengeModal({
     if (isSubmitting || !answer.trim()) return;
 
     setIsSubmitting(true);
-    setStatusMessage("🧠 Google Gemini evaluating cognitive intent (< 400ms)...");
+    setStatusMessage("Google Gemini evaluating cognitive intent (< 400ms)...");
 
     const elapsed = Date.now() - startTimeRef.current;
     const res = await onSubmit(answer, elapsed, false);
 
     if (res?.status === "APPROVED" || res?.is_verified) {
-      setStatusMessage("✅ Verified! Payment approved and funds moving.");
+      setStatusMessage("Verified! Payment approved and funds moving.");
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
       }, 700);
     } else {
-      setStatusMessage("🚨 Cognitive Match Failed! Locking account for 1 hour...");
+      setStatusMessage("Cognitive Match Failed! Locking account for 1 hour...");
       setTimeout(() => {
         if (onFraudLockdown) onFraudLockdown(res?.dossier);
       }, 1200);
     }
   };
 
-  if (!isOpen || !challengeData) return null;
+  if (!isOpen || !challengeData || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 transition-all duration-200">
       <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-9 text-slate-900 overflow-hidden animate-fade-in">
         {/* Ambient top light */}
         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#003087] via-[#0070ba] to-sky-400" />
@@ -127,14 +134,15 @@ export function ChallengeModal({
               disabled={isSubmitting}
               className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 placeholder-slate-400 font-bold text-base outline-none transition-all"
             />
-            <p className="text-[11px] text-slate-500 mt-1.5">
-              💡 Natural spelling tolerated. Evaluated semantically by Google Gemini in &lt; 400ms.
+            <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-[#0070ba] shrink-0" />
+              <span>Natural spelling tolerated. Evaluated semantically by Google Gemini in &lt; 400ms.</span>
             </p>
           </div>
 
           {statusMessage && (
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2 shadow-sm animate-fade-in">
-              <span className="animate-spin text-sm">⏳</span>
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2.5 shadow-sm animate-fade-in">
+              <Loader2 className="w-4 h-4 animate-spin text-[#0070ba] shrink-0" />
               <span>{statusMessage}</span>
             </div>
           )}
@@ -160,6 +168,7 @@ export function ChallengeModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

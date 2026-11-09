@@ -142,7 +142,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       try {
         const mailResult = await sendUnifiedEmail({
           to: normalizedEmail,
-          subject: `🔐 Your PayPal Verification Code: ${otp}`,
+          subject: `[Security Code] Your PayPal Verification Code: ${otp}`,
           text: `Your PayPal PayShield verification code is: ${otp}. Valid for 10 minutes. If you did not request this, please ignore this email. Check your spam/junk folder if not in primary inbox.`,
           html: `
             <!DOCTYPE html>
@@ -172,7 +172,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                   <div class="code">${otp}</div>
                 </div>
                 <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
-                  ⏱️ This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
+                  Note: This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
                 </p>
                 <div class="footer">
                   PayPal PayShield Security Gateway • 2211 North First Street, San Jose, CA 95131
