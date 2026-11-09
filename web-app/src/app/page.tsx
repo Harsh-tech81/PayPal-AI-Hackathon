@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<"personal" | "business">("personal");
   const [demoState, setDemoState] = useState<"safe" | "threat">("safe");
 
   return (
@@ -48,15 +47,19 @@ export default function HomePage() {
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
-            <button className="flex items-center gap-1 hover:text-[#0070ba] transition py-1 group">
-              Personal <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0070ba] group-hover:translate-y-0.5 transition" />
-            </button>
-            <button className="flex items-center gap-1 hover:text-[#0070ba] transition py-1 group">
-              Business <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0070ba] group-hover:translate-y-0.5 transition" />
-            </button>
-            <span className="hover:text-[#0070ba] transition cursor-pointer py-1">Advertiser</span>
-            <span className="hover:text-[#0070ba] transition cursor-pointer py-1">Developer</span>
+          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
+            <Link href="/dashboard" className="hover:text-[#0070ba] transition py-1">
+              Dashboard
+            </Link>
+            <Link href="/dashboard/transactions" className="hover:text-[#0070ba] transition py-1">
+              Send Money
+            </Link>
+            <Link href="/intent-form" className="hover:text-[#0070ba] transition py-1">
+              Memory Vault
+            </Link>
+            <Link href="/dashboard/alerts" className="hover:text-[#0070ba] transition py-1">
+              Security Center
+            </Link>
           </nav>
         </div>
 
@@ -88,31 +91,7 @@ export default function HomePage() {
           </span>
           <span className="font-extrabold uppercase tracking-wider text-[11px]">Cognitive Defense Network Active</span>
           <span className="text-slate-300">•</span>
-          <span className="text-slate-600 font-semibold text-[11px]">Sub-400ms Verification Window</span>
-        </div>
-
-        {/* Tab Pill Selector */}
-        <div className="mb-8 inline-flex p-1.5 rounded-full bg-slate-200/70 border border-slate-300/60 shadow-inner backdrop-blur-md">
-          <button
-            onClick={() => setActiveTab("personal")}
-            className={`px-7 py-2.5 rounded-full text-sm font-bold transition-all duration-200 ${
-              activeTab === "personal"
-                ? "bg-white text-slate-950 shadow-md scale-[1.02]"
-                : "text-slate-600 hover:text-slate-950"
-            }`}
-          >
-            Personal
-          </button>
-          <button
-            onClick={() => setActiveTab("business")}
-            className={`px-7 py-2.5 rounded-full text-sm font-bold transition-all duration-200 ${
-              activeTab === "business"
-                ? "bg-white text-slate-950 shadow-md scale-[1.02]"
-                : "text-slate-600 hover:text-slate-950"
-            }`}
-          >
-            Business
-          </button>
+          <span className="text-slate-600 font-semibold text-[11px]">Dynamic Cognitive Shielding</span>
         </div>
 
         {/* Hero Headline */}
@@ -278,7 +257,7 @@ export default function HomePage() {
         </div>
         <div className="flex items-center gap-6 font-semibold text-slate-400 text-[11px]">
           <span className="flex items-center gap-1.5"><Lock className="w-3 h-3 text-emerald-600" /> AES-256-GCM Vault</span>
-          <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#0070ba]" /> Google Gemini 1.5 Flash</span>
+          <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#0070ba]" /> Cognitive AI Security Guard</span>
         </div>
       </footer>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ShieldCheck, Lock, CheckCircle2, X, AlertCircle, Sparkles, Brain, Cpu, ArrowRight } from "lucide-react";
+import { CheckCircle2, X, Sparkles, Brain, Cpu } from "lucide-react";
 import { VerificationChallengeData } from "../../hooks/useVerification";
 
 interface ChallengeModalProps {
@@ -47,7 +47,7 @@ export function ChallengeModal({
     if (isSubmitting || !answer.trim()) return;
 
     setIsSubmitting(true);
-    setStatusMessage("🧠 Google Gemini evaluating cognitive intent (< 400ms)...");
+    setStatusMessage("🧠 Evaluating cognitive security intent (< 400ms)...");
 
     const elapsed = Date.now() - startTimeRef.current;
     const res = await onSubmit(answer, elapsed, false);
@@ -91,8 +91,19 @@ export function ChallengeModal({
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Security Question</h2>
           <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            Anomalous transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span> intercepted. Answer your private human memory prompt below to authorize.
+            Anomalous transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span> intercepted. Answer your private human memory prompt below to authorize at your own pace.
           </p>
+        </div>
+
+        {/* User-Friendly Verification Guidance Badge */}
+        <div className="mb-5 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-600">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Self-Paced Cognitive Recall</span>
+          </span>
+          <span className="text-[11px] font-mono text-[#0070ba] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+            Untimed • User Friendly
+          </span>
         </div>
 
         {/* Dynamic Riddle Box */}
@@ -107,7 +118,7 @@ export function ChallengeModal({
           <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             <span>Enclave: AES-256</span>
             <span className="text-[#0070ba] flex items-center gap-1">
-              <Cpu className="w-3 h-3" /> Gemini 1.5 Evaluator
+              <Cpu className="w-3 h-3" /> Cognitive Security Evaluator
             </span>
           </div>
         </div>
@@ -128,7 +139,7 @@ export function ChallengeModal({
               className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 placeholder-slate-400 font-bold text-base outline-none transition-all"
             />
             <p className="text-[11px] text-slate-500 mt-1.5">
-              💡 Natural spelling tolerated. Evaluated semantically by Google Gemini in &lt; 400ms.
+              💡 Natural spelling tolerated. Take your time to recall and answer.
             </p>
           </div>
 

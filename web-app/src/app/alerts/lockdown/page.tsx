@@ -2,17 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShieldAlert, Download, CheckCircle2, Clock, Video, ArrowLeft, ShieldCheck, AlertTriangle, FileText, Lock } from "lucide-react";
+import { ShieldAlert, Download, CheckCircle2, Clock, Video, ArrowLeft, ShieldCheck, AlertTriangle, FileText, Lock, Fingerprint } from "lucide-react";
 import { api } from "../../../lib/api-client";
 import { VideoKycModal } from "../../../components/verification/VideoKycModal";
 
 export default function LockdownPage() {
-  const [minutes, setMinutes] = useState(56);
-  const [seconds, setSeconds] = useState(12);
+  const [minutes, setMinutes] = useState(59);
+  const [seconds, setSeconds] = useState(59);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [unfreezeSuccess, setUnfreezeSuccess] = useState(false);
   const [attemptedAmount, setAttemptedAmount] = useState("1,200.00");
   const [incidentRef, setIncidentRef] = useState("PS-FR-2026-9812A");
+  const [attackerIp, setAttackerIp] = useState("185.220.101.5 (Tor Proxy / Frankfurt)");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -23,18 +24,24 @@ export default function LockdownPage() {
       }
       const ref = search.get("ref");
       if (ref) setIncidentRef(ref);
-    }
-  }, []);
+      const ip = search.get("ip");
+      if (ip) setAttackerIp(`${ip} (Unrecognized Proxy Node)`);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev > 0) return prev - 1;
-        setMinutes((m) => Math.max(0, m - 1));
-        return 59;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+      // Check real freeze expiration timestamp from session
+      const rawFrozenUntil = localStorage.getItem("payshield_frozen_until");
+      const targetTime = rawFrozenUntil ? new Date(rawFrozenUntil).getTime() : Date.now() + 60 * 60 * 1000;
+
+      const updateRemaining = () => {
+        const diffMs = Math.max(0, targetTime - Date.now());
+        const totalSecs = Math.floor(diffMs / 1000);
+        setMinutes(Math.floor(totalSecs / 60));
+        setSeconds(totalSecs % 60);
+      };
+
+      updateRemaining();
+      const timer = setInterval(updateRemaining, 1000);
+      return () => clearInterval(timer);
+    }
   }, []);
 
   const handleDownloadDossier = async () => {
@@ -87,7 +94,7 @@ export default function LockdownPage() {
                 ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
                 : "bg-amber-50 text-amber-900 border-amber-200"
             }`}>
-              {unfreezeSuccess ? "RESTORED ✅" : `${minutes}m ${seconds < 10 ? `0${seconds}` : seconds}s`}
+              {unfreezeSuccess ? "RESTORED âœ…" : `${minutes}m ${seconds < 10 ? `0${seconds}` : seconds}s`}
             </span>
           </div>
 
@@ -99,7 +106,7 @@ export default function LockdownPage() {
             <div className="flex justify-between items-center">
               <span className="text-slate-500">Attacker IP Node:</span>
               <span className="font-mono text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-100">
-                185.220.101.5 (Tor Proxy / Frankfurt)
+                {attackerIp}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -145,8 +152,8 @@ export default function LockdownPage() {
               onClick={() => setIsVideoModalOpen(true)}
               className="w-full py-4 px-6 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 active:scale-[0.99] text-white shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 group"
             >
-              <Video className="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform" />
-              <span>Verify with Video KYC to Unlock Account</span>
+              <Fingerprint className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform" />
+              <span>Verify with Device Biometrics (Windows Hello / Touch ID)</span>
             </button>
           ) : (
             <Link

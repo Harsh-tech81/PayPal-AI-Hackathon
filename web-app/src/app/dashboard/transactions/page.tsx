@@ -17,6 +17,22 @@ export default function SendTransactionsPage() {
   const [loading, setLoading] = useState(false);
   const [bannerStatus, setBannerStatus] = useState<any>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [clientIp, setClientIp] = useState("127.0.0.1");
+
+  React.useEffect(() => {
+    async function detectIp() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(2000) });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.ip) setClientIp(data.ip);
+        }
+      } catch {
+        // Local network / offline fallback
+      }
+    }
+    detectIp();
+  }, []);
 
   const {
     isOpen,
@@ -51,8 +67,8 @@ export default function SendTransactionsPage() {
         currency: "USD",
         description: description.trim(),
         deviceFingerprint: isSimulatingHack ? "fp_unknown_linux_attacker" : "fp_primary_trusted_device",
-        ipAddress: isSimulatingHack ? "185.220.101.5" : "103.212.144.10",
-        location: isSimulatingHack ? "Overseas Proxy (Frankfurt / Tor Node)" : "Bengaluru, India",
+        ipAddress: isSimulatingHack ? "185.220.101.5" : clientIp,
+        location: isSimulatingHack ? "Overseas Proxy (Frankfurt / Tor Node)" : "Verified Local Client",
         timeOfTransfer: isSimulatingHack ? "03:15:00 IST" : "14:30:00 IST",
       };
 
@@ -240,7 +256,7 @@ export default function SendTransactionsPage() {
         onSuccess={() => {
           setBannerStatus({
             status: "APPROVED",
-            message: "Payment verified successfully by Google Gemini in < 400ms! Funds moved safely.",
+            message: "Payment verified successfully by Cognitive Security in < 400ms! Funds moved safely.",
           });
         }}
         onFraudLockdown={(dossier) => {
@@ -250,6 +266,9 @@ export default function SendTransactionsPage() {
           query.set("amount", String(lockdownAmt));
           if (dossier?.incidentReference) {
             query.set("ref", dossier.incidentReference);
+          }
+          if (dossier?.attackerIp) {
+            query.set("ip", dossier.attackerIp);
           }
           router.push(`/alerts/lockdown?${query.toString()}`);
         }}
