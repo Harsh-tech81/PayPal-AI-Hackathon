@@ -19,6 +19,18 @@ function getAuthHeaders(): Record<string, string> {
   };
 }
 
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text || !text.trim()) {
+    return { ok: res.ok, status: res.status };
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { ok: res.ok, status: res.status, raw: text };
+  }
+}
+
 export const api = {
   // Auth & Profile
   async sendOtp(email: string, phone?: string) {
@@ -27,7 +39,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, phone }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async verifyOtp(email: string, otp: string) {
@@ -36,7 +48,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, otp }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async register(data: any) {
@@ -45,7 +57,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async login(data: any) {
@@ -54,14 +66,14 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async getProfile() {
     const res = await fetch(`${USER_SERVICE}/api/v1/users/me`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async setupIntentVault(secrets: any[]) {
@@ -71,7 +83,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ userId: userId || "", secrets }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async getDevices() {
@@ -82,7 +94,7 @@ export const api = {
     const res = await fetch(url, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async revokeDevice(deviceId: string) {
@@ -92,7 +104,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ deviceId, userId }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   // Transactions & PayPal Interception
@@ -102,14 +114,14 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async getTransactionHistory() {
     const res = await fetch(`${TRANSACTION_SERVICE}/api/v1/transactions/history`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async cancelTransaction(transactionId: string) {
@@ -117,7 +129,7 @@ export const api = {
       method: "POST",
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   // Verification Agent (10s Challenge Modal)
@@ -135,14 +147,14 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   // Alerts & Lockdowns
   async getAlertHistory(userId?: string) {
     const uid = userId || (typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : "a0000000-0000-0000-0000-000000000001");
     const res = await fetch(`${ALERT_SERVICE}/api/v1/alerts/history/${uid}`);
-    return res.json();
+    return safeJson(res);
   },
 
   async unfreezeAccount(method: string = "video_kyc") {
@@ -152,7 +164,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ userId: uid || "a0000000-0000-0000-0000-000000000001", resolutionMethod: method }),
     });
-    return res.json();
+    return safeJson(res);
   },
 
   async downloadBankReport(incidentReference: string) {
@@ -161,6 +173,6 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ incidentReference }),
     });
-    return res.json();
+    return safeJson(res);
   },
 };

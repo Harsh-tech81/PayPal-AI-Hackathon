@@ -42,7 +42,12 @@ export function BalanceCards() {
       const userId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null);
       if (userId) {
         const USER_SERVICE = process.env.NEXT_PUBLIC_USER_SERVICE_URL || "http://localhost:8001";
-        const vRes = await fetch(`${USER_SERVICE}/api/v1/intent-form/status/${userId}`).then((r) => r.json()).catch(() => null);
+        const vRes = await fetch(`${USER_SERVICE}/api/v1/intent-form/status/${userId}`)
+          .then(async (r) => {
+            const txt = await r.text();
+            return txt ? JSON.parse(txt) : null;
+          })
+          .catch(() => null);
         if (vRes && typeof vRes.anchorsCount === "number") {
           setAnchorCount(vRes.anchorsCount > 0 ? vRes.anchorsCount : 10);
         }

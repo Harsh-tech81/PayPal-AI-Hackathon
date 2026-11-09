@@ -64,7 +64,7 @@ export async function isPlatformAuthenticatorAvailable(): Promise<boolean> {
 export function getStoredBiometricCredential(): WebAuthnCredentialData | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(WEBAUTHN_STORAGE_KEY);
-  if (!raw) return null;
+  if (!raw || !raw.trim()) return null;
   try {
     return JSON.parse(raw);
   } catch {
