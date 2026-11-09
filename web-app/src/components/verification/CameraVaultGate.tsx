@@ -1,178 +1,201 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { Camera, CheckCircle2, ShieldCheck, RefreshCw, Lock, ArrowLeft, Scan, Sparkles } from "lucide-react";
+import React, { useState } from "react";
+import { Fingerprint, CheckCircle2, ShieldCheck, RefreshCw, Lock, ArrowLeft, AlertCircle, Laptop, Sparkles, Smartphone } from "lucide-react";
 import Link from "next/link";
+import {
+  verifyBiometricPasskey,
+  registerBiometricPasskey,
+  getStoredBiometricCredential,
+  instantBiometricBypass,
+  isWebAuthnSupported,
+} from "../../lib/webauthn";
+import { getSession } from "../../lib/auth-session";
 
 interface CameraVaultGateProps {
   onVerified: () => void;
 }
 
 export function CameraVaultGate({ onVerified }: CameraVaultGateProps) {
-  const [step, setStep] = useState<"ready" | "scanning" | "verified">("ready");
-  const [scanProgress, setScanProgress] = useState(0);
-  const [hasWebcam, setHasWebcam] = useState(false);
+  const [step, setStep] = useState<"ready" | "authenticating" | "verified" | "error">("ready");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const handleBiometricAuth = async (mode: "auto" | "register" | "bypass" = "auto") => {
+    setErrorMessage(null);
 
-  useEffect(() => {
-    startCamera();
-    return () => {
-      stopCamera();
-    };
-  }, []);
+    // 1. One-Click Instant Bypass for localhost testing / presentations
+    if (mode === "bypass") {
+      setStep("authenticating");
+      setTimeout(() => {
+        instantBiometricBypass();
+        setStep("verified");
+        setTimeout(() => onVerified(), 700);
+      }, 400);
+      return;
+    }
 
-  const startCamera = async () => {
+    setStep("authenticating");
+
     try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+      const session = getSession();
+      const existing = getStoredBiometricCredential();
+
+      // If user explicitly requested registration OR no passkey has been saved yet
+      if (mode === "register" || !existing || existing.id.startsWith("dev_")) {
+        const regRes = await registerBiometricPasskey({
+          id: session?.user?.id || "owner-vault-biometric",
+          name: session?.user?.email || "owner@payshield.ai",
+          displayName: session?.user?.fullName || "PayPal Account Owner",
         });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
+
+        if (!regRes.success) {
+          setStep("error");
+          setErrorMessage(regRes.error || "Biometric registration was cancelled.");
+          return;
         }
-        setHasWebcam(true);
-      } else {
-        setHasWebcam(false);
+
+        // Successfully created & verified passkey with fingerprint
+        setStep("verified");
+        setTimeout(() => onVerified(), 900);
+        return;
       }
-    } catch {
-      setHasWebcam(false);
+
+      // Existing passkey: verify assertion
+      const verifyRes = await verifyBiometricPasskey();
+      if (!verifyRes.success) {
+        setStep("error");
+        setErrorMessage(
+          verifyRes.error || "No passkey found on this device. Click 'Register Android Fingerprint' below to set it up."
+        );
+        return;
+      }
+
+      setStep("verified");
+      setTimeout(() => onVerified(), 900);
+    } catch (err: any) {
+      setStep("error");
+      setErrorMessage(err.message || "Device biometric authentication failed.");
     }
-  };
-
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-  };
-
-  const handleStartScan = () => {
-    setStep("scanning");
-    setScanProgress(0);
-
-    const interval = setInterval(() => {
-      setScanProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setStep("verified");
-          stopCamera();
-          setTimeout(() => {
-            onVerified();
-          }, 1000);
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 200);
   };
 
   return (
     <div className="w-full max-w-lg mx-auto bg-white/95 border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-luxury backdrop-blur-xl text-center relative overflow-hidden animate-fade-in">
+      {/* Top Security Icon */}
       <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-50 to-blue-100 text-[#0070ba] flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-200/60">
         <Lock className="w-8 h-8" />
       </div>
 
       <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2.5">
         <span className="w-1.5 h-1.5 rounded-full bg-[#0070ba] animate-pulse" />
-        Biometric Camera Guard Active
+        WebAuthn FIDO2 Biometric Gate Active
       </span>
-      <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Camera Verification Required</h2>
+      <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+        Device Biometric Verification
+      </h2>
       <p className="text-xs text-slate-500 mt-2 max-w-sm mx-auto leading-relaxed">
-        To configure or update your Zero-Knowledge Memory Vault, please confirm your physical identity with a quick camera face scan.
+        Verify your identity using your hardware biometric sensor (Android Fingerprint, Windows Hello, Touch ID, or PIN) to unlock your Zero-Knowledge Memory Vault.
       </p>
 
-      {/* Viewfinder Viewport with HUD Brackets */}
-      <div className="relative w-full aspect-[4/3] rounded-2xl bg-slate-950 overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center my-6">
-        {hasWebcam ? (
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            className="w-full h-full object-cover transform scale-x-[-1]"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-950 via-navy-900 to-slate-900 flex flex-col items-center justify-center p-6 text-center relative">
-            <div className="w-20 h-20 rounded-2xl border border-sky-500/30 bg-sky-500/10 flex items-center justify-center mb-3 animate-pulse">
-              <Camera className="w-9 h-9 text-sky-400" />
-            </div>
-            <p className="text-xs font-bold text-slate-200">Biometric Sensor Standby</p>
-            <p className="text-[11px] text-slate-400 mt-1">Ready for live facial keypoint alignment.</p>
-          </div>
-        )}
+      {/* Biometric Sensor Visualizer */}
+      <div className="my-7 p-8 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-slate-800 text-white shadow-2xl relative overflow-hidden">
+        {/* Ambient Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* HUD Corner Brackets */}
-        <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-sky-400/80 pointer-events-none" />
-        <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-sky-400/80 pointer-events-none" />
-        <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-sky-400/80 pointer-events-none" />
-        <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-sky-400/80 pointer-events-none" />
-
-        {/* Oval Face Target Guide */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+        <div className="relative z-10 flex flex-col items-center">
           <div
-            className={`w-44 h-56 rounded-full border-2 transition-all duration-300 ${
+            className={`w-24 h-24 rounded-full flex items-center justify-center mb-4 transition-all duration-500 border ${
               step === "verified"
-                ? "border-emerald-500 bg-emerald-500/15 shadow-[0_0_30px_rgba(16,185,129,0.5)]"
-                : step === "scanning"
-                ? "border-sky-400 shadow-[0_0_30px_rgba(56,189,248,0.6)]"
-                : "border-white/30 border-dashed"
+                ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)]"
+                : step === "authenticating"
+                ? "bg-sky-500/20 border-sky-400 text-sky-400 shadow-[0_0_30px_rgba(56,189,248,0.4)] animate-pulse"
+                : step === "error"
+                ? "bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.3)]"
+                : "bg-white/5 border-white/10 text-sky-400 shadow-inner"
             }`}
-          />
-        </div>
-
-        {/* Laser Sweep Beam */}
-        {step === "scanning" && <div className="laser-scan-line pointer-events-none" />}
-
-        {/* Verified Overlay */}
-        {step === "verified" && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3 shadow-glow-emerald">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <h3 className="text-xl font-black text-slate-950">Identity Confirmed!</h3>
-            <p className="text-xs font-semibold text-slate-500 mt-1">Opening Encrypted Memory Vault...</p>
+          >
+            {step === "verified" ? (
+              <CheckCircle2 className="w-12 h-12" />
+            ) : step === "authenticating" ? (
+              <RefreshCw className="w-12 h-12 animate-spin" />
+            ) : (
+              <Fingerprint className="w-12 h-12" />
+            )}
           </div>
-        )}
+
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+            <Smartphone className="w-4 h-4 text-sky-400" />
+            <span>
+              {step === "verified"
+                ? "Biometric Identity Verified"
+                : step === "authenticating"
+                ? "Awaiting Biometric Touch on Android / PC..."
+                : "Android Fingerprint & Windows Hello Ready"}
+            </span>
+          </div>
+
+          <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+            {step === "verified"
+              ? "Opening encrypted Zero-Knowledge Memory Vault..."
+              : step === "authenticating"
+              ? "Scan your fingerprint on your phone or PC to authenticate"
+              : "Hardware-backed biometric passkey via Bluetooth / FIDO2"}
+          </p>
+        </div>
       </div>
 
-      {/* Progress Indicator */}
-      {step === "scanning" && (
-        <div className="mb-4 text-left">
-          <div className="flex justify-between text-xs font-bold text-slate-700 mb-1.5">
-            <span>Verifying Facial Biometrics...</span>
-            <span className="font-mono text-[#0070ba]">{scanProgress}%</span>
-          </div>
-          <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden p-0.5">
-            <div
-              className="h-full bg-gradient-to-r from-sky-400 to-[#0070ba] rounded-full transition-all duration-200"
-              style={{ width: `${scanProgress}%` }}
-            />
-          </div>
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2.5 text-left animate-fade-in">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        {step === "ready" && (
-          <button
-            onClick={handleStartScan}
-            className="w-full py-4 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2 group"
-          >
-            <Camera className="w-4 h-4 text-sky-400 group-hover:scale-110 transition-transform" />
-            <span>Scan Face to Unlock Memory Vault</span>
-          </button>
+        {step !== "authenticating" && (
+          <>
+            <button
+              onClick={() => handleBiometricAuth("auto")}
+              className="w-full py-4 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 group"
+            >
+              <Fingerprint className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform" />
+              <span>
+                {step === "error"
+                  ? "Retry Biometric Verification"
+                  : "Authenticate with Android Fingerprint / Passkey"}
+              </span>
+            </button>
+
+            {/* Direct Register Passkey Button (Fixes "No passkeys available" by creating passkey on phone) */}
+            <button
+              type="button"
+              onClick={() => handleBiometricAuth("register")}
+              className="w-full py-3 rounded-full font-bold text-xs bg-sky-50 hover:bg-sky-100 text-[#0070ba] border border-sky-200/80 transition flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Smartphone className="w-4 h-4 text-[#0070ba]" />
+              <span>Register New Fingerprint Passkey on Android Phone</span>
+            </button>
+
+            {/* Instant 1-Click Biometric Demo Pass */}
+            <button
+              type="button"
+              onClick={() => handleBiometricAuth("bypass")}
+              className="w-full py-2.5 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Instant 1-Click Biometric Verification (Demo / Localhost)</span>
+            </button>
+          </>
         )}
 
-        {step === "scanning" && (
+        {step === "authenticating" && (
           <button
             disabled
             className="w-full py-4 rounded-full font-bold text-sm bg-slate-200 text-slate-600 flex items-center justify-center gap-2 cursor-wait"
           >
             <RefreshCw className="w-4 h-4 animate-spin text-[#0070ba]" />
-            <span>Verifying Live Physical Presence...</span>
+            <span>Awaiting Biometric Prompt on Phone / Device...</span>
           </button>
         )}
 
@@ -180,9 +203,12 @@ export function CameraVaultGate({ onVerified }: CameraVaultGateProps) {
           href="/dashboard"
           className="text-xs font-bold text-slate-500 hover:text-slate-900 flex items-center justify-center gap-1.5 pt-1 transition"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Cancel & Return to Dashboard
+          <ArrowLeft className="w-3.5 h-3.5" /> Cancel &amp; Return to Dashboard
         </Link>
       </div>
     </div>
   );
 }
+
+// Export alias for forward compatibility
+export const BiometricVaultGate = CameraVaultGate;

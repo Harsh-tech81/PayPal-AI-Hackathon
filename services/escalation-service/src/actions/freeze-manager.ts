@@ -28,9 +28,6 @@ export async function executeAccountFreeze(req: FreezeRequest): Promise<{
 
   try {
     let targetUser = req.userId ? await prisma.user.findUnique({ where: { id: req.userId } }) : null;
-    if (!targetUser) {
-      targetUser = await prisma.user.findFirst({ orderBy: { createdAt: "desc" } });
-    }
 
     if (targetUser) {
       targetUserId = targetUser.id;
@@ -45,6 +42,8 @@ export async function executeAccountFreeze(req: FreezeRequest): Promise<{
           frozenReason: req.reason,
         },
       });
+    } else {
+      console.warn(`[FREEZE ENGINE] Security Alert: Target user ${req.userId} not found in database. Skipping freeze to protect innocent accounts.`);
     }
 
     // 2. Record FraudIncident in PostgreSQL
@@ -65,9 +64,9 @@ export async function executeAccountFreeze(req: FreezeRequest): Promise<{
     console.warn(`[Freeze DB Update Notice] ${err.message}`);
   }
 
-  // Ensure contact details are guaranteed for high-deliverability alerting
-  const finalEmail = userEmail || req.dossier?.userEmail || "saurabhkumar1542007@gmail.com";
-  const finalPhone = userPhone || req.dossier?.userPhone || "6299912602";
+  // Ensure contact details are resolved from registered user records or environmental config
+  const finalEmail = userEmail || req.dossier?.userEmail || process.env.ALERT_FALLBACK_EMAIL || "security-alerts@payshield.ai";
+  const finalPhone = userPhone || req.dossier?.userPhone || process.env.ALERT_FALLBACK_PHONE || "";
 
   // 3. Immediately trigger multi-channel alerts (SMS, Email, Push) to the actual registered user
   try {

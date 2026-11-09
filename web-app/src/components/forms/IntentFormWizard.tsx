@@ -18,13 +18,14 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [encryptionProgress, setEncryptionProgress] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Default initial configuration of 10 secrets
   const [anchors, setAnchors] = useState<AnchorEntry[]>(
     PRESET_INTENT_PROMPTS.map((p) => ({
       category: p.category,
       prompt: p.prompt,
-      answer: "",
+      answer: p.placeholder ? p.placeholder.replace(/^e\.g\.\s*/, "") : "Secret Answer",
       hint: p.hint,
     }))
   );
@@ -41,6 +42,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
   const handleCompleteSetup = async () => {
     setIsSubmitting(true);
+    setErrorMessage(null);
     setEncryptionProgress(20);
 
     setTimeout(() => setEncryptionProgress(60), 300);
@@ -48,9 +50,21 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
     try {
       const activeSecrets = anchors.filter((a) => a.answer.trim().length > 0);
-      const res = await api.setupIntentVault(activeSecrets.length > 0 ? activeSecrets : anchors);
+      if (activeSecrets.length === 0) {
+        setIsSubmitting(false);
+        setErrorMessage("Please provide at least 1 memory anchor before locking your vault.");
+        return;
+      }
+
+      const res = await api.setupIntentVault(activeSecrets);
+      if (res?.error) {
+        setIsSubmitting(false);
+        setErrorMessage(res.error || "Vault configuration rejected by security policy.");
+        return;
+      }
+
       setEncryptionProgress(100);
-      setSuccessMessage(res.message || "10 private human memories encrypted with AES-256-GCM and stored in MongoDB vault!");
+      setSuccessMessage(res?.message || "10 private human memories encrypted with AES-256-GCM and stored in MongoDB vault!");
       setTimeout(() => {
         if (onCompleted) onCompleted();
       }, 1200);
@@ -218,7 +232,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
             <div>
               <h2 className="text-2xl font-black text-slate-950 tracking-tight">Deposit Intimate Memories</h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Provide 1–3 word personal answers. Tolerate casual spelling; Gemini evaluates cognitive intent.
+                Provide 1–3 word personal answers. Natural spelling tolerated; Cognitive AI evaluates intent.
               </p>
             </div>
             <div className="px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-xs font-bold text-[#0070ba] shrink-0 self-start sm:self-auto">
@@ -239,7 +253,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
                   placeholder="Enter your personal memory answer..."
                   className="w-full px-4 py-3 bg-white border border-slate-300 focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 text-sm outline-none font-medium placeholder-slate-400 transition"
                 />
-                <p className="text-[11px] text-slate-500">💡 Hint: Not discoverable via web searches or public social media.</p>
+                <p className="text-[11px] text-slate-500">ðŸ’¡ Hint: Not discoverable via web searches or public social media.</p>
               </div>
             ))}
           </div>
@@ -297,6 +311,12 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-bold flex items-center justify-center gap-2 shadow-sm animate-fade-in">
               <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
               <span>{successMessage}</span>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center justify-center gap-2 shadow-sm animate-fade-in">
+              <span>{errorMessage}</span>
             </div>
           )}
 

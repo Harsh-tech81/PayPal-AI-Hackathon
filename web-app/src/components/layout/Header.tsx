@@ -29,11 +29,11 @@ export function Header() {
 
         {/* Top Dropdown Links */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-600">
-          <Link href="/dashboard" className="flex items-center gap-1 hover:text-[#0070ba] transition py-1 group">
-            Personal <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0070ba] transition" />
+          <Link href="/dashboard" className="hover:text-[#0070ba] transition py-1">
+            Dashboard
           </Link>
-          <Link href="/dashboard/transactions" className="flex items-center gap-1 hover:text-[#0070ba] transition py-1 group">
-            Business <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0070ba] transition" />
+          <Link href="/dashboard/transactions" className="hover:text-[#0070ba] transition py-1">
+            Send Money
           </Link>
           <Link 
             href="/intent-form" 

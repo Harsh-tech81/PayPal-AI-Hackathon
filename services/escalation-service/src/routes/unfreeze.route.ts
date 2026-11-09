@@ -6,14 +6,20 @@ export async function unfreezeRoutes(fastify: FastifyInstance) {
     try {
       const body = request.body as {
         userId: string;
-        resolutionMethod?: "admin_override" | "video_kyc" | "timer_expired";
+        resolutionMethod?: "admin_override" | "video_kyc" | "webauthn_biometric" | "timer_expired";
       };
 
       if (!body.userId) {
         return reply.status(400).send({ error: "userId is required for account unfreeze" });
       }
 
-      const res = await executeAccountUnfreeze(body.userId, body.resolutionMethod || "video_kyc");
+      const validMethods = ["admin_override", "video_kyc", "webauthn_biometric", "timer_expired"];
+      const method = body.resolutionMethod || "webauthn_biometric";
+      if (!validMethods.includes(method)) {
+        return reply.status(400).send({ error: `Invalid resolutionMethod. Allowed: ${validMethods.join(", ")}` });
+      }
+
+      const res = await executeAccountUnfreeze(body.userId, method);
 
       return reply.send({
         status: "UNFROZEN",

@@ -16,6 +16,9 @@ export async function sendRoutes(fastify: FastifyInstance) {
       const body = parsed.data;
       const userId = (request.headers["x-user-id"] as string) || "a0000000-0000-0000-0000-000000000001";
 
+      const clientIp = (request.headers["x-forwarded-for"] as string) || request.ip || "127.0.0.1";
+      const resolvedIp = body.ipAddress || clientIp;
+
       const result = await paymentOrchestrator.processPaymentInitiation({
         userId,
         recipientEmail: body.recipientEmail,
@@ -23,8 +26,8 @@ export async function sendRoutes(fastify: FastifyInstance) {
         currency: body.currency,
         description: body.description,
         deviceFingerprint: body.deviceFingerprint,
-        ipAddress: body.ipAddress || (request.ip === "127.0.0.1" || !request.ip ? "185.220.101.5" : request.ip),
-        location: body.location || (body.amount >= 1000 ? "Overseas Proxy (Frankfurt / Tor Node)" : "Bengaluru, India"),
+        ipAddress: resolvedIp,
+        location: body.location || (resolvedIp.startsWith("185.220") ? "Overseas Proxy (Frankfurt / Tor Node)" : "Local Authorized Client"),
       });
 
       return reply.send(result);
