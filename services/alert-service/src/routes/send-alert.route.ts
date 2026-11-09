@@ -49,7 +49,7 @@ export async function sendAlertRoutes(fastify: FastifyInstance) {
       const formattedAmount = `$${amount.toFixed(2)} USD`;
       const freezeTime = new Date().toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
 
-      const smsText = ` PayShield Alert: An unauthorized transfer of ${formattedAmount} was blocked on your PayPal account from IP ${ip} (${loc}). Your account has been temporarily FROZEN for 1 hour to protect your funds. Incident Ref: ${ref}`;
+      const smsText = `PayShield Alert: An unauthorized transfer of ${formattedAmount} was blocked on your PayPal account from IP ${ip} (${loc}). Your account has been temporarily FROZEN for 1 hour to protect your funds. Incident Ref: ${ref}`;
       
       const plainText = `PayPal PayShield Security Interception Notice:
 An unauthorized transfer of ${formattedAmount} was intercepted on your PayPal account from ${loc} (IP: ${ip}) on ${freezeTime}.

@@ -260,3 +260,4 @@ export function instantBiometricBypass(): { success: boolean; credential: WebAut
   saveStoredBiometricCredential(cred);
   return { success: true, credential: cred };
 }
+

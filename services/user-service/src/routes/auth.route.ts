@@ -145,7 +145,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       try {
         const mailResult = await sendUnifiedEmail({
           to: normalizedEmail,
-          subject: ` Your PayPal Verification Code: ${otp}`,
+          subject: `[Security Code] Your PayPal Verification Code: ${otp}`,
           text: `Your PayPal PayShield verification code is: ${otp}. Valid for 10 minutes. If you did not request this, please ignore this email. Check your spam/junk folder if not in primary inbox.`,
           html: `
             <!DOCTYPE html>

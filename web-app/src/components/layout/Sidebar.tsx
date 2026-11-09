@@ -17,8 +17,8 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 border-r border-slate-200/80 bg-white/60 backdrop-blur-xl p-4 flex flex-col justify-between shrink-0 hidden md:flex min-h-[calc(100vh-5rem)] transition-all">
-      <div className="space-y-1.5">
+    <aside className="w-64 border-r border-slate-200/80 bg-white/60 backdrop-blur-xl p-4 flex flex-col shrink-0 hidden md:flex h-full select-none transition-all">
+      <div className="space-y-1.5 overflow-y-auto overflow-x-hidden pr-1 flex-1">
         <div className="px-3.5 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">
           Main Navigation
         </div>
@@ -45,25 +45,27 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* Security Status Box */}
-      <div className="p-4 rounded-3xl bg-white/90 border border-slate-200/90 shadow-sm backdrop-blur-sm relative overflow-hidden group hover:shadow-md transition-all">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
-        
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5 text-[#0070ba]" /> Cognitive Shield
-          </span>
-          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-            ACTIVE
-          </span>
-        </div>
-        <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-          Real-time dynamic cognitive challenge gate protects all high-risk payments.
-        </p>
-        <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-          <span>Latency: &lt; 400ms</span>
-          <span className="text-[#0070ba]">10/10 Anchors</span>
+      {/* Security Status Box - Permanently pinned at bottom */}
+      <div className="shrink-0 pt-4 mt-auto">
+        <div className="p-4 rounded-3xl bg-white/90 border border-slate-200/90 shadow-sm backdrop-blur-sm relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
+          
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-[#0070ba]" /> Cognitive Shield
+            </span>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              ACTIVE
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+            Real-time dynamic cognitive challenge gate protects all high-risk payments.
+          </p>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <span>Latency: &lt; 400ms</span>
+            <span className="text-[#0070ba]">10/10 Anchors</span>
+          </div>
         </div>
       </div>
     </aside>

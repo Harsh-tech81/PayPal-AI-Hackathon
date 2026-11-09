@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { Fingerprint, CheckCircle2, ShieldCheck, RefreshCw, X, AlertCircle, Laptop, Lock, Smartphone, Sparkles } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { Camera, CheckCircle2, ShieldCheck, RefreshCw, X, AlertCircle, Scan, Sparkles } from "lucide-react";
 import { api } from "../../lib/api-client";
 import { getSession, saveSession } from "../../lib/auth-session";
 import { verifyBiometricPasskey, registerBiometricPasskey, getStoredBiometricCredential, instantBiometricBypass } from "../../lib/webauthn";
@@ -13,7 +14,9 @@ interface VideoKycModalProps {
 }
 
 export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps) {
-  const [step, setStep] = useState<"ready" | "authenticating" | "verified" | "error">("ready");
+  const [mounted, setMounted] = useState(false);
+  const [step, setStep] = useState<"camera" | "scanning" | "verified" | "error">("camera");
+  const [scanProgress, setScanProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -21,12 +24,18 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
   const handleBiometricUnfreeze = async (mode: "auto" | "register" | "bypass" = "auto") => {
     setErrorMessage(null);
 
-    if (mode === "bypass") {
-      setStep("authenticating");
-      setTimeout(async () => {
-        instantBiometricBypass();
-        await completeUnfreeze();
-      }, 400);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Initialize camera when modal opens
+  useEffect(() => {
+    if (!isOpen) {
+      stopCamera();
+      setStep("camera");
+      setScanProgress(0);
+      setErrorMessage(null);
       return;
     }
 
@@ -104,9 +113,11 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 relative overflow-hidden text-center">
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 transition-all duration-200">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-9 text-slate-900 overflow-hidden animate-fade-in">
         {/* Close Button */}
         {step !== "authenticating" && (
           <button
@@ -249,6 +260,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
