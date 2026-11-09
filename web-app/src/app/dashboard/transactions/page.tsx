@@ -14,7 +14,6 @@ export default function SendTransactionsPage() {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [amount, setAmount] = useState<string>("");
   const [description, setDescription] = useState("");
-  const [isSimulatingHack, setIsSimulatingHack] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bannerStatus, setBannerStatus] = useState<any>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -96,10 +95,10 @@ export default function SendTransactionsPage() {
         amount: parsedAmount,
         currency: "USD",
         description: description.trim(),
-        deviceFingerprint: isSimulatingHack ? "fp_unknown_linux_attacker" : "fp_primary_trusted_device",
-        ipAddress: isSimulatingHack ? "185.220.101.5" : clientIp,
-        location: isSimulatingHack ? "Overseas Proxy (Frankfurt / Tor Node)" : "Verified Local Client",
-        timeOfTransfer: isSimulatingHack ? "03:15:00" : currentLocalTime,
+        deviceFingerprint: "fp_primary_trusted_device",
+        ipAddress: clientIp,
+        location: "Verified Local Client",
+        timeOfTransfer: currentLocalTime,
       };
 
       const res = await api.sendMoney(payload);
@@ -125,10 +124,16 @@ export default function SendTransactionsPage() {
           recipientEmail: recipientEmail.trim(),
         });
       } else if (res.status === "AUTO_APPROVED" || res.status === "APPROVED") {
+        setRecipientEmail("");
+        setAmount("");
+        setDescription("");
         setBannerStatus({
           status: "AUTO_APPROVED",
           message: res.message || "Payment auto-approved under risk policy in 50ms with zero friction.",
         });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       }
     } catch (err: any) {
       setValidationError(`Error initiating payment: ${err.message}`);
@@ -192,35 +197,6 @@ export default function SendTransactionsPage() {
         </div>
       )}
 
-      {/* Evaluation Mode Switcher */}
-      <div className="flex justify-center">
-        <div className="inline-flex p-1.5 rounded-full bg-slate-200/70 border border-slate-300/60 shadow-inner backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => setIsSimulatingHack(false)}
-            className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
-              !isSimulatingHack
-                ? "bg-white text-emerald-800 shadow-sm scale-[1.01]"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Standard (Trusted Bengaluru Node)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsSimulatingHack(true)}
-            className={`px-5 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
-              isSimulatingHack
-                ? "bg-rose-50 text-rose-800 border border-rose-200 shadow-sm scale-[1.01]"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span>Simulate Anomaly (Tor Node Proxy)</span>
-          </button>
-        </div>
-      </div>
 
       {/* Payment Form Container */}
       <div className="p-7 sm:p-10 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl space-y-6">
@@ -315,13 +291,23 @@ export default function SendTransactionsPage() {
         onClose={closeChallenge}
         onSubmit={submitAnswer}
         onSuccess={() => {
+          setRecipientEmail("");
+          setAmount("");
+          setDescription("");
           setBannerStatus({
             status: "APPROVED",
             message: "Payment verified successfully by Cognitive Security in < 400ms! Funds moved safely.",
           });
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         }}
         onFraudLockdown={(dossier) => {
           closeChallenge();
+          if (typeof window !== "undefined") {
+            localStorage.setItem("payshield_user_frozen", "true");
+          }
+          setIsAccountFrozen(true);
           const query = new URLSearchParams();
           const lockdownAmt = dossier?.attemptedAmount || (amount ? parseFloat(amount) : 1200);
           query.set("amount", String(lockdownAmt));

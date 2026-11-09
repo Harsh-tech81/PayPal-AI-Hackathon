@@ -2,12 +2,29 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShieldCheck, Smartphone, Laptop, Trash2, KeyRound, Lock, Check, Cpu, Sparkles } from "lucide-react";
+import { ShieldCheck, Smartphone, Laptop, Trash2, KeyRound, Lock, Check, Cpu, Sparkles, ShieldAlert, Fingerprint } from "lucide-react";
 import { api } from "../../../lib/api-client";
+import { VideoKycModal } from "../../../components/verification/VideoKycModal";
 
 export default function SecurityPage() {
   const [devices, setDevices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAccountFrozen, setIsAccountFrozen] = useState(false);
+  const [isUnfreezeModalOpen, setIsUnfreezeModalOpen] = useState(false);
+
+  useEffect(() => {
+    const frozenState = typeof window !== "undefined" ? localStorage.getItem("payshield_user_frozen") === "true" : false;
+    setIsAccountFrozen(frozenState);
+
+    api.getProfile().then((res) => {
+      if (res?.user?.isFrozen !== undefined) {
+        setIsAccountFrozen(Boolean(res.user.isFrozen));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("payshield_user_frozen", res.user.isFrozen ? "true" : "false");
+        }
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function fetchDevices() {
@@ -46,6 +63,30 @@ export default function SecurityPage() {
           Manage your personal cognitive memory anchors and review authenticated hardware devices.
         </p>
       </div>
+
+      {isAccountFrozen && (
+        <div className="p-6 rounded-3xl bg-amber-50/90 border border-amber-200/90 shadow-luxury backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 border border-amber-300 shadow-sm">
+              <ShieldAlert className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-amber-950 tracking-tight">Account Temporarily Frozen for Security</h4>
+              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                Payments and transfers are restricted under security freeze. Verify your biometric passkey to restore immediate access.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsUnfreezeModalOpen(true)}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-full font-bold text-xs bg-slate-950 hover:bg-neutral-800 text-white shadow-md transition-all flex items-center justify-center gap-2 shrink-0 hover:scale-[1.02] active:scale-95"
+          >
+            <Fingerprint className="w-4 h-4 text-sky-400" />
+            <span>Verify Passkey to Unfreeze</span>
+          </button>
+        </div>
+      )}
 
       {/* Memory Vault Card */}
       <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative overflow-hidden">
@@ -135,6 +176,15 @@ export default function SecurityPage() {
           </div>
         )}
       </div>
+
+      <VideoKycModal
+        isOpen={isUnfreezeModalOpen}
+        onClose={() => setIsUnfreezeModalOpen(false)}
+        onSuccess={() => {
+          setIsUnfreezeModalOpen(false);
+          setIsAccountFrozen(false);
+        }}
+      />
     </div>
   );
 }
