@@ -33,6 +33,20 @@ export const userRepository = {
     return null;
   },
 
+  async findFirstUser() {
+    try {
+      const u = await prisma.user.findFirst({
+        orderBy: { createdAt: "desc" },
+        include: { devices: true },
+      });
+      if (u) return u;
+    } catch (err: any) {
+      console.warn(`[User Repo DB Notice] findFirstUser: ${err.message}`);
+    }
+    const firstMem = memoryUsers.values().next().value;
+    return firstMem || null;
+  },
+
   async create(data: {
     email: string;
     phone?: string;

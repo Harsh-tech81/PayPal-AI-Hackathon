@@ -80,12 +80,14 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
 
       if (typeof window !== "undefined") {
         localStorage.removeItem("payshield_frozen_until");
+        localStorage.setItem("payshield_user_frozen", "false");
       }
 
       const session = getSession();
       if (session) {
-        saveSession(session.token, {
+        saveSession(session.token || "", {
           ...session.user,
+          isFrozen: false,
           isLocked: false,
         });
       }
@@ -98,6 +100,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
       console.warn("[Unfreeze Fallback]", err.message);
       if (typeof window !== "undefined") {
         localStorage.removeItem("payshield_frozen_until");
+        localStorage.setItem("payshield_user_frozen", "false");
       }
       setStep("verified");
       setTimeout(() => {

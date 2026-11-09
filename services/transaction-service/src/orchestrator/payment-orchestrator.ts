@@ -1,4 +1,5 @@
 import { transactionRepository } from "../repositories/transaction.repo.js";
+import prisma from "../../../../database/prisma-client.js";
 
 const RISK_ENGINE_URL = process.env.RISK_ENGINE_URL || "http://localhost:8004";
 const VERIFICATION_AGENT_URL = process.env.VERIFICATION_AGENT_URL || "http://localhost:8003";
@@ -52,6 +53,50 @@ export const paymentOrchestrator = {
    * - If Risk >= 0.30: INTERCEPTS and triggers 10s GenAI Challenge
    */
   async processPaymentInitiation(payload: CreatePaymentPayload) {
+    // Step 0: Protective Account Freeze Check (Blocks payments for frozen accounts)
+    try {
+      if (payload.userId) {
+        const sender = await prisma.user.findUnique({
+          where: { id: payload.userId },
+        });
+        if (sender && sender.isFrozen && (!sender.frozenUntil || new Date(sender.frozenUntil) > new Date())) {
+          return {
+            status: "ACCOUNT_FROZEN",
+            isFrozen: true,
+            error: "Your account is temporarily frozen for security. Please complete Biometric KYC / Passkey verification to unfreeze your account before making payments.",
+            message: "Account frozen. Biometric verification required to unfreeze.",
+            requiresUnfreeze: true,
+            unfreezeMethod: "biometric_passkey",
+            frozenUntil: sender.frozenUntil,
+          };
+        }
+      }
+    } catch (fErr: any) {
+      console.warn(`[Payment Orchestrator Freeze DB Notice] ${fErr.message}`);
+    }
+
+    // Step 0b: Check User Service memory state fallback
+    try {
+      const USER_SERVICE_URL = process.env.USER_SERVICE_URL || "http://localhost:8001";
+      const uRes = await fetch(`${USER_SERVICE_URL}/api/v1/users/check-status/${encodeURIComponent(payload.userId)}`, {
+        signal: AbortSignal.timeout(1000),
+      });
+      if (uRes.ok) {
+        const uData = (await uRes.json()) as any;
+        if (uData.isFrozen) {
+          return {
+            status: "ACCOUNT_FROZEN",
+            isFrozen: true,
+            error: "Your account is temporarily frozen for security. Please complete Biometric KYC / Passkey verification to unfreeze your account before making payments.",
+            message: "Account frozen. Biometric verification required to unfreeze.",
+            requiresUnfreeze: true,
+            unfreezeMethod: "biometric_passkey",
+            frozenUntil: uData.frozenUntil,
+          };
+        }
+      }
+    } catch {}
+
     // Step 1: Score risk via Risk Engine (Port 8004)
     let riskScore = 0.05;
     let requiresVerification = false;
