@@ -265,7 +265,7 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
               className="w-full text-center py-4 text-3xl font-mono font-black tracking-[12px] bg-slate-50/80 border border-slate-300 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 outline-none transition-all shadow-inner"
             />
             <p className="text-[11px] text-slate-500 text-center mt-2.5 leading-relaxed">
-              🔒 Enter <strong>either</strong> the code received on phone SMS <strong>or</strong> your email inbox.<br />
+              Enter <strong>either</strong> the code received on phone SMS <strong>or</strong> your email inbox.<br />
               <span className="text-emerald-700 font-semibold">Both channels are active and accepted instantly.</span>
             </p>
           </div>

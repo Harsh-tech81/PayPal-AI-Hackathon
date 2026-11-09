@@ -53,13 +53,13 @@ export function ChallengeModal({
     const res = await onSubmit(answer, elapsed, false);
 
     if (res?.status === "APPROVED" || res?.is_verified) {
-      setStatusMessage("✅ Verified! Payment approved and funds moving.");
+      setStatusMessage("Verified! Payment approved and funds moving.");
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
       }, 700);
     } else {
-      setStatusMessage("🚨 Cognitive Match Failed! Locking account for 1 hour...");
+      setStatusMessage("Cognitive Match Failed! Locking account for 1 hour...");
       setTimeout(() => {
         if (onFraudLockdown) onFraudLockdown(res?.dossier);
       }, 1200);
@@ -139,13 +139,13 @@ export function ChallengeModal({
               className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 placeholder-slate-400 font-bold text-base outline-none transition-all"
             />
             <p className="text-[11px] text-slate-500 mt-1.5">
-              💡 Natural spelling tolerated. Take your time to recall and answer.
+              Natural spelling tolerated. Take your time to recall and answer.
             </p>
           </div>
 
           {statusMessage && (
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 flex items-center gap-2 shadow-sm animate-fade-in">
-              <span className="animate-spin text-sm">⏳</span>
+              <span className="animate-spin text-sm">...</span>
               <span>{statusMessage}</span>
             </div>
           )}

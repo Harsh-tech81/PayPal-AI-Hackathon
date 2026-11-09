@@ -253,7 +253,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
                   placeholder="Enter your personal memory answer..."
                   className="w-full px-4 py-3 bg-white border border-slate-300 focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 text-sm outline-none font-medium placeholder-slate-400 transition"
                 />
-                <p className="text-[11px] text-slate-500">ðŸ’¡ Hint: Not discoverable via web searches or public social media.</p>
+                <p className="text-[11px] text-slate-500">Hint: Not discoverable via web searches or public social media.</p>
               </div>
             ))}
           </div>
