@@ -61,11 +61,11 @@ export async function answerRoutes(fastify: FastifyInstance) {
         {
           transactionId: body.transactionId,
           userId: body.userId,
-          amount: 1200,
-          currency: "USD",
+          amount: cached?.amount || 1200,
+          currency: cached?.currency || "USD",
           challengeToken: body.challengeToken,
           challengeRiddle: riddle,
-          riskScore: 0.88,
+          riskScore: cached?.riskScore || 0.88,
           ipAddress: body.attackerIp,
           selectedAnchor: {
             id: cached?.selectedAnchor?.id || "anc_01",

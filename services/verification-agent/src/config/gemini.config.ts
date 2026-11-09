@@ -3,21 +3,21 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 const TIMEOUT_MS = 4000;
 
 /**
- * Fetch wrapper with timeout for Gemini 3.5 Flash-Lite (Google Free Tier Model).
+ * Fetch wrapper with timeout for Google Gemini 1.5 Flash.
  */
 async function callGeminiApi(prompt: string, systemInstruction?: string): Promise<string> {
   if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("your_gemini_api_key")) {
     throw new Error("Missing GEMINI_API_KEY");
   }
 
-  const rawModel = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
-  const modelName = rawModel.toLowerCase().includes("3.5") || rawModel.toLowerCase().includes("flash")
-    ? "gemini-3.5-flash-lite"
-    : "gemini-3.5-flash-lite";
+  const rawModel = (process.env.GEMINI_MODEL || "gemini-1.5-flash").trim();
+  const modelName = rawModel.toLowerCase().includes("flash") || rawModel.toLowerCase().includes("1.5")
+    ? "gemini-1.5-flash"
+    : rawModel;
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     modelName

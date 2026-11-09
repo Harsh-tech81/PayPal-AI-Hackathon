@@ -20,9 +20,9 @@ export async function challengeNode(state: VerificationState): Promise<Partial<V
 
   const challengeToken = `ctk_${crypto.randomUUID()}`;
   const now = Date.now();
-  // Comfortable non-expiring session window (24 hours)
-  const ttlSeconds = 86400;
-  const expiresAt = now + ttlSeconds * 1000;
+  const challengeWindowSeconds = parseInt(process.env.LANGGRAPH_TIMEOUT_SECONDS || "10", 10);
+  const ttlSeconds = Math.max(300, challengeWindowSeconds * 10); // Cache TTL allows roundtrip evaluation
+  const expiresAt = now + challengeWindowSeconds * 1000;
 
   // Arm challenge token in Redis / Memory store
   const challengePayload = {

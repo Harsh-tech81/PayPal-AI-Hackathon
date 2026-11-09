@@ -80,12 +80,11 @@ export async function intentFormRoutes(fastify: FastifyInstance) {
   fastify.get("/api/v1/intent-form/internal-vault/:userId", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { userId } = request.params as { userId: string };
-      let doc = await intentRepository.getIntentSecrets(userId);
-
-      // If not found for current userId, try demo user ID as fallback
-      if (!doc || !Array.isArray(doc.anchors) || doc.anchors.length === 0) {
-        doc = await intentRepository.getIntentSecrets("a0000000-0000-0000-0000-000000000001");
+      if (!userId) {
+        return reply.status(400).send({ error: "userId parameter is required" });
       }
+
+      const doc = await intentRepository.getIntentSecrets(userId);
 
       if (!doc || !Array.isArray(doc.anchors) || doc.anchors.length === 0) {
         return reply.send({ userId, anchors: [] });

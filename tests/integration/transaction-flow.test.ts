@@ -36,6 +36,6 @@ describe("Transaction Service & Orchestration Integration Tests", () => {
     expect(body.status).toBe("VERIFICATION_REQUIRED");
     expect(body.challengeToken).toBeDefined();
     expect(body.question).toBeDefined();
-    expect(body.timeoutSeconds).toBeGreaterThanOrEqual(20);
+    expect(body.timeoutSeconds).toBeGreaterThanOrEqual(10);
   });
 });
