@@ -28,8 +28,11 @@ export function useVerification() {
   }, []);
 
   const closeChallenge = useCallback(() => {
+    if (challengeData?.transactionId) {
+      api.cancelTransaction(challengeData.transactionId).catch(() => {});
+    }
     setIsOpen(false);
-  }, []);
+  }, [challengeData]);
 
   const submitAnswer = useCallback(
     async (answer: string, elapsedMs: number, isTimeout: boolean = false) => {

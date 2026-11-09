@@ -28,6 +28,7 @@ export async function sendRoutes(fastify: FastifyInstance) {
         deviceFingerprint: body.deviceFingerprint,
         ipAddress: resolvedIp,
         location: body.location || (resolvedIp.startsWith("185.220") ? "Overseas Proxy (Frankfurt / Tor Node)" : "Local Authorized Client"),
+        timeOfTransfer: body.timeOfTransfer,
       });
 
       return reply.send(result);

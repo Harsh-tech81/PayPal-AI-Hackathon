@@ -22,6 +22,7 @@ export async function scoreRoutes(fastify: FastifyInstance) {
         ipAddress: body.ipAddress,
         location: body.location,
         timeIso: body.timeIso,
+        timeOfTransfer: body.timeOfTransfer,
         recipientEmail: body.recipientEmail,
       });
 

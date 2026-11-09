@@ -9,7 +9,7 @@ import { sanitizeMongoUri } from "../../../../../database/connection-sanitizer.j
  * the most relevant anchor for the transaction context.
  */
 
-// Fallback memory anchors if MongoDB is unavailable or empty
+// Fallback memory anchors if MongoDB is unavailable or empty - 10 Presets
 const DEFAULT_USER_ANCHORS = [
   {
     id: "anc_01",
@@ -28,9 +28,58 @@ const DEFAULT_USER_ANCHORS = [
   {
     id: "anc_03",
     category: "memory_anchors",
-    prompt: "Where did you take a cold tumble during your 2018 winter trip?",
+    prompt: "Where did you take a cold tumble during a winter vacation?",
     plainAnswer: "Zurich ski slope",
     hint: "Winter vacation incident",
+  },
+  {
+    id: "anc_04",
+    category: "secret_habits",
+    prompt: "What odd food combination do you secretly eat when alone?",
+    plainAnswer: "Fries with chocolate shake",
+    hint: "Quirky comfort habit",
+  },
+  {
+    id: "anc_05",
+    category: "secret_habits",
+    prompt: "What song do you always sing in the shower when stressed?",
+    plainAnswer: "Bohemian Rhapsody",
+    hint: "Personal private routine",
+  },
+  {
+    id: "anc_06",
+    category: "secret_habits",
+    prompt: "What was the very first item you bought with your own earned paycheck?",
+    plainAnswer: "Blue guitar strap",
+    hint: "Personal milestone item",
+  },
+  {
+    id: "anc_07",
+    category: "pattern_sequences",
+    prompt: "Your secret lucky 3-digit number and the reason behind it",
+    plainAnswer: "742 first apartment",
+    hint: "Private cognitive association",
+  },
+  {
+    id: "anc_08",
+    category: "pattern_sequences",
+    prompt: "The street name of the house where you fell and bruised your knee as a child",
+    plainAnswer: "Elm Street alley",
+    hint: "Childhood landmark",
+  },
+  {
+    id: "anc_09",
+    category: "pattern_sequences",
+    prompt: "The nickname of your favorite elementary school teacher",
+    plainAnswer: "Captain Green",
+    hint: "School memory",
+  },
+  {
+    id: "anc_10",
+    category: "memory_anchors",
+    prompt: "The color and make of your family's oldest road-trip car",
+    plainAnswer: "Rusty red wagon",
+    hint: "Sentimental family anchor",
   },
 ];
 
@@ -73,20 +122,23 @@ export async function ragRetrieverNode(state: VerificationState): Promise<Partia
       const doc = await db.collection("intent_forms").findOne({ userId: safeUserId });
 
       if (doc && Array.isArray(doc.anchors) && doc.anchors.length > 0) {
-        // Find best match or rotate based on least recently used
-        const sorted = [...doc.anchors].sort((a, b) => {
-          const aTime = a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0;
-          const bTime = b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0;
-          return aTime - bTime;
-        });
-
-        const picked = sorted[0];
+        // Randomly select across user anchors to provide a varied challenge every step
+        const randomIndex = Math.floor(Math.random() * doc.anchors.length);
+        const picked = doc.anchors[randomIndex];
         let plainAnswer = "Bruno";
         try {
           plainAnswer = decryptSecret(picked.encryptedAnswer);
         } catch {
-          plainAnswer = picked.plainAnswer || "Bruno";
+          plainAnswer = picked.plainAnswer || picked.answer || "Bruno";
         }
+
+        // Asynchronously touch lastUsedAt
+        db.collection("intent_forms")
+          .updateOne(
+            { userId: safeUserId, "anchors.id": picked.id },
+            { $set: { "anchors.$.lastUsedAt": new Date() } }
+          )
+          .catch(() => {});
 
         return {
           selectedAnchor: {
@@ -113,12 +165,13 @@ export async function ragRetrieverNode(state: VerificationState): Promise<Partia
     if (res.ok) {
       const data = (await res.json()) as any;
       if (data && Array.isArray(data.anchors) && data.anchors.length > 0) {
-        const picked = data.anchors[0];
+        const randomIndex = Math.floor(Math.random() * data.anchors.length);
+        const picked = data.anchors[randomIndex];
         return {
           selectedAnchor: {
             id: picked.id,
             prompt: picked.prompt,
-            plainAnswer: picked.plainAnswer,
+            plainAnswer: picked.plainAnswer || picked.answer,
             hint: picked.hint,
           },
         };
@@ -128,8 +181,9 @@ export async function ragRetrieverNode(state: VerificationState): Promise<Partia
     console.warn("[RAG Node] user-service fetch notice:", err.message);
   }
 
-  // Fallback anchor
-  const fallback = DEFAULT_USER_ANCHORS[0];
+  // Fallback anchor: randomly rotate among all 10 presets
+  const randomFallbackIndex = Math.floor(Math.random() * DEFAULT_USER_ANCHORS.length);
+  const fallback = DEFAULT_USER_ANCHORS[randomFallbackIndex];
   return {
     selectedAnchor: {
       id: fallback.id,

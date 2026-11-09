@@ -61,6 +61,9 @@ export default function SendTransactionsPage() {
     setBannerStatus(null);
 
     try {
+      const now = new Date();
+      const currentLocalTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
+
       const payload = {
         recipientEmail: recipientEmail.trim(),
         amount: parsedAmount,
@@ -69,7 +72,7 @@ export default function SendTransactionsPage() {
         deviceFingerprint: isSimulatingHack ? "fp_unknown_linux_attacker" : "fp_primary_trusted_device",
         ipAddress: isSimulatingHack ? "185.220.101.5" : clientIp,
         location: isSimulatingHack ? "Overseas Proxy (Frankfurt / Tor Node)" : "Verified Local Client",
-        timeOfTransfer: isSimulatingHack ? "03:15:00 IST" : "14:30:00 IST",
+        timeOfTransfer: isSimulatingHack ? "03:15:00" : currentLocalTime,
       };
 
       const res = await api.sendMoney(payload);
