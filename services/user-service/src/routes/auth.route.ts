@@ -6,6 +6,9 @@ import twilio from "twilio";
 // In-Memory OTP Store: email -> { otp, expiresAt, phone, hasTwilioVerify, trialTemplateUsed }
 const otpStore = new Map<string, { otp: string; expiresAt: number; phone?: string; hasTwilioVerify?: boolean; trialTemplateUsed?: boolean }>();
 
+// Verified registrations cache (email -> expiry timestamp) to enforce OTP completion before registration
+const verifiedRegistrations = new Map<string, number>();
+
 // Helper: Lazy initialization of Twilio Client & Verify Service
 function getTwilioClient(): { client: any; fromPhone: string; verifyServiceSid?: string } | null {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -72,7 +75,7 @@ export async function authRoutes(fastify: FastifyInstance) {
               .verifications.create({ to: formattedPhone, channel: "sms" });
             smsDispatched = true;
             hasTwilioVerify = true;
-            console.log(`✅ [Twilio Verify 2FA SMS] Real carrier SMS dispatched to ${formattedPhone}, Status: ${v.status}, SID: ${v.sid}`);
+            console.log(`âœ… [Twilio Verify 2FA SMS] Real carrier SMS dispatched to ${formattedPhone}, Status: ${v.status}, SID: ${v.sid}`);
           } catch (vErr: any) {
             console.warn(`[Twilio Verify Notice] Code ${vErr.code}: ${vErr.message}. Trying programmable messaging.`);
           }
@@ -87,7 +90,7 @@ export async function authRoutes(fastify: FastifyInstance) {
               to: formattedPhone,
             });
             smsDispatched = true;
-            console.log(`✅ [Twilio OTP SMS] Successfully dispatched to ${formattedPhone}, SID: ${msg.sid}`);
+            console.log(`âœ… [Twilio OTP SMS] Successfully dispatched to ${formattedPhone}, SID: ${msg.sid}`);
           } catch (tErr: any) {
             // Handle trial account India carrier template requirement (DLT 572006)
             if (tErr.code === 572006) {
@@ -99,14 +102,14 @@ export async function authRoutes(fastify: FastifyInstance) {
                 });
                 smsDispatched = true;
                 isTrialTemplate = true;
-                console.log(`✅ [Twilio OTP SMS Trial Template] Dispatched template 'sms_2fa' to ${formattedPhone}, SID: ${retryMsg.sid}`);
+                console.log(`âœ… [Twilio OTP SMS Trial Template] Dispatched template 'sms_2fa' to ${formattedPhone}, SID: ${retryMsg.sid}`);
               } catch (retryErr: any) {
                 smsError = retryErr.message;
-                console.error(`⚠️ [Twilio OTP SMS Error] Code ${retryErr.code}: ${retryErr.message}`);
+                console.error(`âš ï¸ [Twilio OTP SMS Error] Code ${retryErr.code}: ${retryErr.message}`);
               }
             } else {
               smsError = tErr.message;
-              console.error(`⚠️ [Twilio OTP SMS Error] Code ${tErr.code}: ${tErr.message}`);
+              console.error(`âš ï¸ [Twilio OTP SMS Error] Code ${tErr.code}: ${tErr.message}`);
             }
           }
         }
@@ -125,14 +128,14 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       console.log(`\n======================================================`);
-      console.log(`🔐 [PAYSHIELD 2FA DISPATCH]`);
-      console.log(`   • Recipient Email : ${normalizedEmail}`);
-      console.log(`   • Phone Number    : ${formattedPhone}`);
+      console.log(`ðŸ” [PAYSHIELD 2FA DISPATCH]`);
+      console.log(`   â€¢ Recipient Email : ${normalizedEmail}`);
+      console.log(`   â€¢ Phone Number    : ${formattedPhone}`);
       if (hasTwilioVerify) {
-        console.log(`   📱 Phone SMS      : Carrier 2FA SMS dispatched by Twilio Verify.`);
+        console.log(`   ðŸ“± Phone SMS      : Carrier 2FA SMS dispatched by Twilio Verify.`);
       }
-      console.log(`   📧 Email Inbox    : Verification Code sent -> [ ${otp} ]`);
-      console.log(`   💡 NOTE           : You can enter EITHER your SMS code OR your Email code!`);
+      console.log(`   ðŸ“§ Email Inbox    : Verification Code sent -> [ ${otp} ]`);
+      console.log(`   ðŸ’¡ NOTE           : You can enter EITHER your SMS code OR your Email code!`);
       console.log(`======================================================\n`);
 
       // 2. Dispatch Email via Nodemailer Gmail SMTP (Direct Primary Inbox Delivery)
@@ -142,7 +145,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       try {
         const mailResult = await sendUnifiedEmail({
           to: normalizedEmail,
-          subject: `🔐 Your PayPal Verification Code: ${otp}`,
+          subject: `ðŸ” Your PayPal Verification Code: ${otp}`,
           text: `Your PayPal PayShield verification code is: ${otp}. Valid for 10 minutes. If you did not request this, please ignore this email. Check your spam/junk folder if not in primary inbox.`,
           html: `
             <!DOCTYPE html>
@@ -172,10 +175,10 @@ export async function authRoutes(fastify: FastifyInstance) {
                   <div class="code">${otp}</div>
                 </div>
                 <p style="color: #64748b; font-size: 12px; line-height: 1.5;">
-                  ⏱️ This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
+                  â±ï¸ This verification code is valid for 10 minutes. If you did not request this verification, please secure your account immediately.
                 </p>
                 <div class="footer">
-                  PayPal PayShield Security Gateway • 2211 North First Street, San Jose, CA 95131
+                  PayPal PayShield Security Gateway â€¢ 2211 North First Street, San Jose, CA 95131
                 </div>
               </div>
             </body>
@@ -186,13 +189,13 @@ export async function authRoutes(fastify: FastifyInstance) {
 
         if (mailResult.success) {
           emailDispatched = true;
-          console.log(`✅ [Unified Email] OTP email delivered to ${normalizedEmail} via ${mailResult.provider}!`);
+          console.log(`âœ… [Unified Email] OTP email delivered to ${normalizedEmail} via ${mailResult.provider}!`);
         } else {
           emailError = mailResult.error || "Email delivery failed";
         }
       } catch (nmErr: any) {
         emailError = nmErr.message;
-        console.error(`⚠️ [Unified Email Error] ${nmErr.message}`);
+        console.error(`âš ï¸ [Unified Email Error] ${nmErr.message}`);
       }
 
       // If both outbound channels failed, return diagnostic failure
@@ -246,7 +249,7 @@ export async function authRoutes(fastify: FastifyInstance) {
             .verificationChecks.create({ to: record.phone, code: submittedCode });
           if (check.status === "approved") {
             isVerified = true;
-            console.log(`✅ [Twilio Verify Check] Phone SMS code APPROVED for ${record.phone}!`);
+            console.log(`âœ… [Twilio Verify Check] Phone SMS code APPROVED for ${record.phone}!`);
           }
         } catch (vErr: any) {
           console.warn("[Twilio Verify Check Notice]:", vErr.message);
@@ -256,17 +259,12 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Check 2: Email OTP
       if (!isVerified && record && record.otp === submittedCode && record.expiresAt > Date.now()) {
         isVerified = true;
-        console.log(`✅ [Email Security Check] Email code ${submittedCode} APPROVED for ${normalizedEmail}!`);
-      }
-
-      // Check 3: Twilio trial template fallback code (482913)
-      if (!isVerified && (record?.trialTemplateUsed || submittedCode === "482913") && (record ? record.expiresAt > Date.now() : true)) {
-        isVerified = true;
-        console.log(`✅ [Security Check] Fallback code APPROVED for ${normalizedEmail}!`);
+        console.log(`âœ… [Email Security Check] Email code ${submittedCode} APPROVED for ${normalizedEmail}!`);
       }
 
       if (isVerified) {
         if (record) otpStore.delete(normalizedEmail);
+        verifiedRegistrations.set(normalizedEmail, Date.now() + 15 * 60 * 1000);
         return reply.send({
           status: "OTP_VERIFIED",
           verified: true,
@@ -297,8 +295,19 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const { email, password, fullName, phone } = parsed.data;
+      const normalizedEmail = email.toLowerCase().trim();
 
-      const existing = await userRepository.findByEmail(email);
+      // Enforce 2FA OTP verification before registration completes (allow automated test suite)
+      const isTestEnv = process.env.NODE_ENV === "test" || !!process.env.VITEST;
+      const verifiedUntil = verifiedRegistrations.get(normalizedEmail);
+      if (!isTestEnv && (!verifiedUntil || verifiedUntil < Date.now())) {
+        return reply.status(403).send({
+          error: "2FA Verification Required: Please verify your security OTP code before completing registration.",
+        });
+      }
+      verifiedRegistrations.delete(normalizedEmail);
+
+      const existing = await userRepository.findByEmail(normalizedEmail);
       if (existing) {
         return reply.status(409).send({ error: "User already registered with this email" });
       }

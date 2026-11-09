@@ -160,7 +160,7 @@ export const paymentOrchestrator = {
           challengeToken: cData.challengeToken,
           question: cData.question,
           timeoutSeconds: cData.timeoutSeconds || 86400,
-          countdownExpiresAt: cData.countdownExpiresAt,
+          countdownExpiresAt: cData.countdownExpiresAt || Date.now() + 86400000,
           riskScore,
           anomalies,
           message: "High-risk anomaly detected. Cognitive verification active.",
