@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Camera, CheckCircle2, ShieldCheck, RefreshCw, X, AlertCircle, Scan, Sparkles } from "lucide-react";
+import { Fingerprint, CheckCircle2, ShieldCheck, RefreshCw, X, AlertCircle, Laptop, Smartphone, Sparkles } from "lucide-react";
 import { api } from "../../lib/api-client";
 import { getSession, saveSession } from "../../lib/auth-session";
 import { verifyBiometricPasskey, registerBiometricPasskey, getStoredBiometricCredential, instantBiometricBypass } from "../../lib/webauthn";
@@ -15,27 +15,23 @@ interface VideoKycModalProps {
 
 export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState<"camera" | "scanning" | "verified" | "error">("camera");
-  const [scanProgress, setScanProgress] = useState(0);
+  const [step, setStep] = useState<"ready" | "authenticating" | "verified" | "error">("ready");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  if (!isOpen) return null;
-
-  const handleBiometricUnfreeze = async (mode: "auto" | "register" | "bypass" = "auto") => {
-    setErrorMessage(null);
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  // Initialize camera when modal opens
-  useEffect(() => {
-    if (!isOpen) {
-      stopCamera();
-      setStep("camera");
-      setScanProgress(0);
-      setErrorMessage(null);
+  const handleBiometricUnfreeze = async (mode: "auto" | "register" | "bypass" = "auto") => {
+    setErrorMessage(null);
+
+    if (mode === "bypass") {
+      setStep("authenticating");
+      setTimeout(async () => {
+        instantBiometricBypass();
+        await completeUnfreeze();
+      }, 400);
       return;
     }
 
@@ -82,7 +78,6 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
     try {
       await api.unfreezeAccount("webauthn_biometric");
 
-      // Clear local freeze state
       if (typeof window !== "undefined") {
         localStorage.removeItem("payshield_frozen_until");
       }
@@ -96,13 +91,11 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
       }
 
       setStep("verified");
-
       setTimeout(() => {
         onSuccess();
       }, 1000);
     } catch (err: any) {
       console.warn("[Unfreeze Fallback]", err.message);
-      // Resilient local unfreeze
       if (typeof window !== "undefined") {
         localStorage.removeItem("payshield_frozen_until");
       }
@@ -116,13 +109,17 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
   if (!isOpen || !mounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6 transition-all duration-200">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200/90 shadow-2xl p-7 sm:p-9 text-slate-900 overflow-hidden animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm transition-all duration-200">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-9 shadow-2xl border border-slate-200/90 overflow-hidden text-center animate-fade-in">
+        {/* Ambient top light */}
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#003087] via-[#0070ba] to-sky-400" />
+
         {/* Close Button */}
         {step !== "authenticating" && (
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+            className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all hover:scale-105 active:scale-95"
+            title="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -133,7 +130,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
           <ShieldCheck className="w-8 h-8" />
         </div>
 
-        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
           <span className="w-1.5 h-1.5 rounded-full bg-[#0070ba] animate-pulse" />
           WebAuthn Account Recovery
         </span>
@@ -145,10 +142,12 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
         </p>
 
         {/* Biometric Visualizer Box */}
-        <div className="my-6 p-7 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-slate-800 text-white shadow-xl relative overflow-hidden">
+        <div className="my-6 p-7 rounded-2xl bg-gradient-to-b from-slate-950 to-slate-900 border border-slate-800 text-white shadow-2xl relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+
           <div className="relative z-10 flex flex-col items-center">
             <div
-              className={`w-20 h-20 rounded-full flex items-center justify-center mb-3 transition-all duration-300 border ${
+              className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-all duration-500 border ${
                 step === "verified"
                   ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.4)]"
                   : step === "authenticating"
