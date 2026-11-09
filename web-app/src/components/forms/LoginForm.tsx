@@ -23,6 +23,12 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
     try {
       const res = await api.login({ email: email.trim(), password });
       if (res.token && res.user) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("payshield_user_frozen", res.user.isFrozen ? "true" : "false");
+          if (!res.user.isFrozen) {
+            localStorage.removeItem("payshield_frozen_until");
+          }
+        }
         loginUser(res.token, res.user);
         if (onLoginSuccess) onLoginSuccess();
       } else {
@@ -54,7 +60,11 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
       });
 
       if (res.token && res.user) {
-        loginUser(res.token, res.user);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("payshield_user_frozen", "false");
+          localStorage.removeItem("payshield_frozen_until");
+        }
+        loginUser(res.token, { ...res.user, isFrozen: false });
         if (onLoginSuccess) onLoginSuccess();
       } else {
         setError(res.error || "No account found matching this passkey. Please sign in with password first.");

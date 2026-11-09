@@ -429,7 +429,11 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.status(404).send({ error: "No account enrolled for this biometric passkey. Please sign in with password first." });
       }
 
-      const isCurrentlyFrozen = Boolean(user.isFrozen && user.frozenUntil && new Date(user.frozenUntil) > new Date());
+      // Unfreeze account automatically since the user verified physical hardware biometrics at login
+      if (user.isFrozen) {
+        await userRepository.unfreezeUser(user.id);
+      }
+      const isCurrentlyFrozen = false;
 
       const token = signToken({
         userId: user.id,
@@ -448,11 +452,11 @@ export async function authRoutes(fastify: FastifyInstance) {
           fullName: user.fullName,
           phone: user.phone,
           isFrozen: isCurrentlyFrozen,
-          frozenUntil: user.frozenUntil,
-          frozenReason: user.frozenReason,
+          frozenUntil: null,
+          frozenReason: null,
           intentFormCompleted: user.intentFormCompleted,
         },
-        message: "Biometric passkey verified. Logged in successfully.",
+        message: "Biometric passkey verified. Account unlocked and logged in successfully.",
       });
     } catch (err: any) {
       fastify.log.error(err);

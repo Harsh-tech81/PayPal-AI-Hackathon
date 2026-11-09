@@ -11,6 +11,7 @@ import {
   isWebAuthnSupported,
 } from "../../lib/webauthn";
 import { getSession } from "../../lib/auth-session";
+import { api } from "../../lib/api-client";
 
 interface CameraVaultGateProps {
   onVerified: () => void;
@@ -20,14 +21,25 @@ export function CameraVaultGate({ onVerified }: CameraVaultGateProps) {
   const [step, setStep] = useState<"ready" | "authenticating" | "verified" | "error">("ready");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const markAccountUnfrozen = async () => {
+    try {
+      await api.unfreezeAccount("webauthn_biometric");
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.setItem("payshield_user_frozen", "false");
+      localStorage.removeItem("payshield_frozen_until");
+    }
+  };
+
   const handleBiometricAuth = async (mode: "auto" | "register" | "bypass" = "auto") => {
     setErrorMessage(null);
 
     // 1. One-Click Instant Bypass for localhost testing / presentations
     if (mode === "bypass") {
       setStep("authenticating");
-      setTimeout(() => {
+      setTimeout(async () => {
         instantBiometricBypass();
+        await markAccountUnfrozen();
         setStep("verified");
         setTimeout(() => onVerified(), 700);
       }, 400);
@@ -55,6 +67,7 @@ export function CameraVaultGate({ onVerified }: CameraVaultGateProps) {
         }
 
         // Successfully created & verified passkey with fingerprint
+        await markAccountUnfrozen();
         setStep("verified");
         setTimeout(() => onVerified(), 900);
         return;
@@ -70,6 +83,7 @@ export function CameraVaultGate({ onVerified }: CameraVaultGateProps) {
         return;
       }
 
+      await markAccountUnfrozen();
       setStep("verified");
       setTimeout(() => onVerified(), 900);
     } catch (err: any) {

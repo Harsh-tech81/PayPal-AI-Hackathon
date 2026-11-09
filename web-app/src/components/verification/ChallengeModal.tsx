@@ -66,10 +66,12 @@ export function ChallengeModal({
         onClose();
       }, 700);
     } else {
-      setStatusMessage("Cognitive Match Failed! Locking account for 1 hour...");
-      setTimeout(() => {
-        if (onFraudLockdown) onFraudLockdown(res?.dossier);
-      }, 1200);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("payshield_user_frozen", "true");
+      }
+      if (onFraudLockdown) {
+        onFraudLockdown(res?.dossier);
+      }
     }
   };
 
