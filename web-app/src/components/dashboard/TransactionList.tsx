@@ -140,9 +140,13 @@ export function TransactionList() {
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
                           <Check className="w-3.5 h-3.5 text-emerald-600" /> Approved
                         </span>
+                      ) : tx.status === "UNVERIFIED" || tx.status === "CANCELLED" || tx.status === "EXPIRED" || (tx.status === "verifying" && Date.now() - new Date(tx.createdAt).getTime() > 60000) ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" /> Unverified
+                        </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
-                          <Clock className="w-3.5 h-3.5 animate-spin" /> Verifying
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#0070ba] border border-blue-200">
+                          <Clock className="w-3.5 h-3.5 animate-spin text-[#0070ba]" /> Verifying
                         </span>
                       )}
                     </td>

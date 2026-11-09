@@ -44,6 +44,7 @@ export const RiskScoreRequestSchema = z.object({
   ipAddress: z.string().optional(),
   location: z.string().optional(),
   timeIso: z.string().optional(),
+  timeOfTransfer: z.string().optional(),
   recipientEmail: z.string().optional(),
 });
 

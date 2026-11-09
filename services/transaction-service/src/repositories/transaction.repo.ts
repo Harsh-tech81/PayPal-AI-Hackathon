@@ -66,13 +66,35 @@ export const transactionRepository = {
   },
 
   async getHistory(senderId: string, limit: number = 20) {
+    const now = Date.now();
+
+    // Auto-expire stale "verifying" transactions older than 60 seconds
+    for (const t of memoryLedger) {
+      if (t.status === "verifying" && t.createdAt) {
+        const age = now - new Date(t.createdAt).getTime();
+        if (age > 60000) {
+          t.status = "UNVERIFIED";
+        }
+      }
+    }
+
     try {
       const list = await prisma.transaction.findMany({
         where: { senderId },
         orderBy: { createdAt: "desc" },
         take: limit,
       });
-      if (list.length > 0) return list;
+      if (list.length > 0) {
+        return list.map((t: any) => {
+          if (t.status === "verifying" && t.createdAt) {
+            const age = now - new Date(t.createdAt).getTime();
+            if (age > 60000) {
+              return { ...t, status: "UNVERIFIED" };
+            }
+          }
+          return t;
+        });
+      }
     } catch (err: any) {
       console.warn(`[Txn History DB Notice] ${err.message}`);
     }

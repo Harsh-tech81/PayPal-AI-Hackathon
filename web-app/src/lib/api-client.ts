@@ -112,6 +112,14 @@ export const api = {
     return res.json();
   },
 
+  async cancelTransaction(transactionId: string) {
+    const res = await fetch(`${TRANSACTION_SERVICE}/api/v1/transactions/${encodeURIComponent(transactionId)}/cancel`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    return res.json();
+  },
+
   // Verification Agent (10s Challenge Modal)
   async submitChallengeAnswer(data: {
     challengeToken: string;

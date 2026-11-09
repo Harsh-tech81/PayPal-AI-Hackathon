@@ -18,6 +18,22 @@ export async function approveRoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.post("/api/v1/transactions/:id/cancel", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { id } = request.params as { id: string };
+      await transactionRepository.updateStatus(id, "UNVERIFIED");
+
+      return reply.send({
+        status: "UNVERIFIED",
+        transactionId: id,
+        message: "Transaction challenge cancelled or closed.",
+      });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Failed to cancel transaction", message: err.message });
+    }
+  });
+
   // PayPal capture-order
   fastify.post("/api/v1/paypal/capture-order", async (request: FastifyRequest, reply: FastifyReply) => {
     try {

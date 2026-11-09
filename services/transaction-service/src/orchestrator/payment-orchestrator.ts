@@ -15,6 +15,7 @@ export interface CreatePaymentPayload {
   deviceFingerprint?: string;
   ipAddress?: string;
   location?: string;
+  timeOfTransfer?: string;
 }
 
 export const paymentOrchestrator = {
@@ -67,6 +68,7 @@ export const paymentOrchestrator = {
           deviceFingerprint: payload.deviceFingerprint,
           ipAddress: payload.ipAddress,
           location: payload.location,
+          timeOfTransfer: payload.timeOfTransfer,
           recipientEmail: payload.recipientEmail,
         }),
       });
@@ -80,14 +82,45 @@ export const paymentOrchestrator = {
     } catch (rErr: any) {
       console.warn(`[Payment Orchestrator Risk Call] ${rErr.message}. Evaluating locally.`);
       const locStr = (payload.location || "").toLowerCase();
-      requiresVerification =
-        payload.amount >= 300 ||
+      const isProxyOrForeign =
         locStr.includes("overseas") ||
         locStr.includes("proxy") ||
         locStr.includes("frankfurt") ||
         locStr.includes("berlin") ||
+        locStr.includes("tor") ||
         (payload.ipAddress || "").startsWith("185.220.");
-      riskScore = requiresVerification ? 0.88 : 0.05;
+
+      // Dynamic amount calculation for local fallback
+      let amtScore = 0.05;
+      if (payload.amount <= 50) {
+        amtScore = 0.02;
+      } else if (payload.amount <= 300) {
+        amtScore = parseFloat((0.08 + ((payload.amount - 50) / 250) * 0.10).toFixed(2));
+      } else if (payload.amount <= 1000) {
+        amtScore = parseFloat((0.20 + ((payload.amount - 300) / 700) * 0.15).toFixed(2));
+      } else if (payload.amount <= 3000) {
+        amtScore = parseFloat((0.35 + ((payload.amount - 1000) / 2000) * 0.12).toFixed(2));
+      } else if (payload.amount <= 8000) {
+        amtScore = parseFloat((0.48 + ((payload.amount - 3000) / 5000) * 0.14).toFixed(2));
+      } else {
+        amtScore = parseFloat((0.64 + Math.min(0.20, ((payload.amount - 8000) / 12000) * 0.18)).toFixed(2));
+      }
+
+      // Late night factor
+      let isLateNight = false;
+      if (payload.timeOfTransfer) {
+        const match = payload.timeOfTransfer.match(/(\d{1,2}):(\d{2})/);
+        if (match) {
+          let h = parseInt(match[1], 10);
+          if (payload.timeOfTransfer.toLowerCase().includes("pm") && h < 12) h += 12;
+          if (payload.timeOfTransfer.toLowerCase().includes("am") && h === 12) h = 0;
+          if (h >= 23 || h <= 5) isLateNight = true;
+        }
+      }
+
+      const totalFallback = 0.05 + amtScore + (isLateNight ? 0.25 : 0.0) + (isProxyOrForeign ? 0.58 : 0.0);
+      riskScore = Math.min(0.99, Math.max(0.01, parseFloat(totalFallback.toFixed(2))));
+      requiresVerification = riskScore >= 0.25;
     }
 
     // Step 2: Record Transaction
@@ -170,12 +203,26 @@ export const paymentOrchestrator = {
       console.warn(`[Verification Agent Call Notice] ${cErr.message}`);
     }
 
-    // Fallback challenge if agent offline
+    // Fallback challenge if agent offline: dynamically rotate across 10 episodic prompts
+    const FALLBACK_QUESTIONS = [
+      "Who used to wag their tail and beg for your morning biscuits when you woke up?",
+      "What secret pet name did your grandmother call you when you were sick in bed?",
+      "Where did you take a cold tumble in the snow during a winter vacation?",
+      "What quirky comfort food combination do you secretly eat when you are home alone?",
+      "What iconic song do you always sing out loud in the shower when stressed?",
+      "What was the very first memorable item you bought with your own hard-earned paycheck?",
+      "What is your secret lucky 3-digit number and private memory code?",
+      "What was the name of the street where you fell and scraped your knee as a child?",
+      "What was the beloved nickname of your favorite elementary school teacher?",
+      "What was the color and style of your family's oldest unforgettable road-trip car?",
+    ];
+    const randomFallbackQ = FALLBACK_QUESTIONS[Math.floor(Math.random() * FALLBACK_QUESTIONS.length)];
+
     return {
       status: "VERIFICATION_REQUIRED",
       transactionId: txn.id,
       challengeToken: `ctk_${Date.now()}`,
-      question: "What is your primary childhood family pet name or native hometown?",
+      question: randomFallbackQ,
       timeoutSeconds: 86400,
       countdownExpiresAt: Date.now() + 86400000,
       riskScore,
