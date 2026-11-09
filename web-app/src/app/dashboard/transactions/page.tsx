@@ -24,7 +24,8 @@ export default function SendTransactionsPage() {
       try {
         const res = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(2000) });
         if (res.ok) {
-          const data = await res.json();
+          const text = await res.text();
+          const data = text ? JSON.parse(text) : null;
           if (data?.ip) setClientIp(data.ip);
         }
       } catch {
