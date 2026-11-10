@@ -8,19 +8,35 @@ export const IntentCategoryEnum = z.enum([
 
 export type IntentCategory = z.infer<typeof IntentCategoryEnum>;
 
-export const MemoryAnchorItemSchema = z.object({
-  id: z.string().optional(),
-  category: IntentCategoryEnum,
-  prompt: z.string().min(5, "Prompt must be at least 5 characters"),
-  answer: z
-    .string()
-    .min(1, "Answer cannot be empty")
-    .max(100, "Answer must be under 100 characters")
-    .refine((val) => val.trim().split(/\s+/).length <= 6, {
-      message: "Answer should be concise (1-5 words)",
-    }),
-  hint: z.string().optional(),
-});
+export const MemoryAnchorItemSchema = z
+  .object({
+    id: z.string().optional(),
+    category: IntentCategoryEnum,
+    prompt: z.string().min(5, "Prompt must be at least 5 characters"),
+    answer: z.string().optional(),
+    encryptedAnswer: z.string().optional(),
+    hint: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Must provide either an answer or a pre-encrypted answer
+      const hasAnswer = typeof data.answer === "string" && data.answer.trim().length > 0;
+      const hasEncrypted = typeof data.encryptedAnswer === "string" && data.encryptedAnswer.trim().length > 0;
+      return hasAnswer || hasEncrypted;
+    },
+    { message: "Either a memory answer or pre-encrypted answer must be provided" }
+  )
+  .refine(
+    (data) => {
+      // If a plaintext answer is provided (not an encrypted hex string containing colons)
+      if (data.answer && !data.encryptedAnswer && !data.answer.includes(":")) {
+        const words = data.answer.trim().split(/\s+/);
+        return words.length <= 6;
+      }
+      return true;
+    },
+    { message: "Answer should be concise (1-5 words)" }
+  );
 
 export type MemoryAnchorItem = z.infer<typeof MemoryAnchorItemSchema>;
 
@@ -29,7 +45,7 @@ export const IntentFormSetupSchema = z.object({
   secrets: z
     .array(MemoryAnchorItemSchema)
     .min(1, "Please provide at least 1 memory anchor")
-    .max(15, "Maximum 15 memory anchors allowed"),
+    .max(30, "Maximum 30 memory anchors allowed"),
 });
 
 export type IntentFormSetupInput = z.infer<typeof IntentFormSetupSchema>;

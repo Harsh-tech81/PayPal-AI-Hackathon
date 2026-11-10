@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IntentFormWizard } from "../../../components/forms/IntentFormWizard";
-import { CameraVaultGate as BiometricVaultGate } from "../../../components/verification/CameraVaultGate";
+import { BiometricVaultGate } from "../../../components/verification/BiometricVaultGate";
 import { X, ShieldCheck, ArrowLeft } from "lucide-react";
 
 export default function IntentFormPage() {

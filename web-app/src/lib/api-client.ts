@@ -85,12 +85,31 @@ export const api = {
     return safeJson(res);
   },
 
-  async setupIntentVault(secrets: any[]) {
-    const userId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+  async setupIntentVault(secrets: any[], overrideUserId?: string) {
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+    const finalUserId = overrideUserId || storedUserId || "a0000000-0000-0000-0000-000000000001";
     const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/setup`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ userId: userId || "", secrets }),
+      body: JSON.stringify({ userId: finalUserId, secrets }),
+    });
+    return safeJson(res);
+  },
+
+  async getVaultStatus(userId?: string) {
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+    const finalUserId = userId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/status/${encodeURIComponent(finalUserId)}`, {
+      headers: getAuthHeaders(),
+    });
+    return safeJson(res);
+  },
+
+  async getVaultAnchors(userId?: string) {
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+    const finalUserId = userId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/internal-vault/${encodeURIComponent(finalUserId)}`, {
+      headers: getAuthHeaders(),
     });
     return safeJson(res);
   },

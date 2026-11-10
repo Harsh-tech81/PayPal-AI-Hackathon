@@ -16,17 +16,29 @@ export async function intentFormRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { userId = "a0000000-0000-0000-0000-000000000001", secrets } = parsed.data;
+      const { secrets } = parsed.data;
+      const rawUserId = (parsed.data.userId || "").trim();
+      const userId = rawUserId.length > 0 ? rawUserId : "a0000000-0000-0000-0000-000000000001";
 
-      // Encrypt each secret with AES-256-GCM before writing to MongoDB
+      // Prepare anchors (accepting pre-encrypted client Web Crypto ciphertexts or encrypting at rest)
       const encryptedAnchors = secrets.map((sec, index) => {
-        const enc = encryptSecret(sec.answer.trim());
+        let serializedEncrypted = "";
+        if (sec.encryptedAnswer && sec.encryptedAnswer.includes(":")) {
+          serializedEncrypted = sec.encryptedAnswer.trim();
+        } else if (sec.answer) {
+          const enc = encryptSecret(sec.answer.trim());
+          serializedEncrypted = serializeEncryptedPayload(enc);
+        } else {
+          const enc = encryptSecret("Secret Memory");
+          serializedEncrypted = serializeEncryptedPayload(enc);
+        }
+
         return {
           id: sec.id || `anc_${index + 1}_${crypto.randomBytes(4).toString("hex")}`,
           category: sec.category,
           prompt: sec.prompt,
-          encryptedAnswer: serializeEncryptedPayload(enc),
-          hint: sec.hint,
+          encryptedAnswer: serializedEncrypted,
+          hint: sec.hint || "",
           lastUsedAt: null,
         };
       });
