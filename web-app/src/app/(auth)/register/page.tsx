@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RegisterForm } from "../../../components/forms/RegisterForm";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft, ShieldCheck } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,19 +25,19 @@ export default function RegisterPage() {
 
       {/* Brand Monogram */}
       <Link href="/" className="flex items-center gap-3 mb-8 group z-10">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white font-black text-2xl italic flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
-          P
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
+          <ShieldCheck className="w-6 h-6 text-white" />
         </div>
         <div className="flex items-baseline">
           <span className="font-black text-3xl text-[#003087] tracking-tight">Pay</span>
-          <span className="font-black text-3xl text-[#0070ba] tracking-tight">Pal</span>
+          <span className="font-black text-3xl text-[#0070ba] tracking-tight">Shield</span>
         </div>
       </Link>
 
       {/* Auth Card */}
       <div className="w-full max-w-md bg-white/95 border border-slate-200/90 rounded-3xl p-8 sm:p-10 shadow-luxury backdrop-blur-xl z-10 transition-all">
         <div className="text-center mb-7">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Sign up for PayPal</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Sign up for PayShield</h1>
           <p className="text-xs text-slate-500 mt-1.5">
             Create your account and set up secure payment protection
           </p>

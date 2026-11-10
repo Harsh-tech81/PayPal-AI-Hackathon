@@ -20,12 +20,12 @@ export default function IntentFormPage() {
       {/* Top Header */}
       <div className="w-full max-w-3xl flex items-center justify-between mb-8 z-10">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white font-black text-lg italic flex items-center justify-center shadow-glow-sm group-hover:scale-105 transition-all">
-            P
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white flex items-center justify-center shadow-glow-sm group-hover:scale-105 transition-all">
+            <ShieldCheck className="w-5 h-5 text-white" />
           </div>
           <div className="flex items-baseline">
             <span className="font-black text-2xl text-[#003087] tracking-tight">Pay</span>
-            <span className="font-black text-2xl text-[#0070ba] tracking-tight">Pal</span>
+            <span className="font-black text-2xl text-[#0070ba] tracking-tight">Shield</span>
           </div>
         </Link>
         <Link
