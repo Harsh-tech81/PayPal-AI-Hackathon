@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, LogOut, Menu, X } from "lucide-react";
+import { Bell, LogOut, Menu, X, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { api } from "../../lib/api-client";
 import { NAV_ITEMS } from "./Sidebar";
@@ -71,13 +71,13 @@ export function Header() {
         {/* Brand */}
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            {/* Official PayPal Monogram */}
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white font-black text-xl italic flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
-              P
+            {/* PayShield Monogram */}
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
+              <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div className="flex items-baseline">
               <span className="font-black text-2xl text-[#003087] tracking-tight">Pay</span>
-              <span className="font-black text-2xl text-[#0070ba] tracking-tight">Pal</span>
+              <span className="font-black text-2xl text-[#0070ba] tracking-tight">Shield</span>
             </div>
           </Link>
         </div>

@@ -202,7 +202,7 @@ export async function registerBiometricPasskey(userInfo?: {
       publicKey: {
         challenge,
         rp: {
-          name: "PayPal PayShield AI",
+          name: "PayShield AI",
           id: typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost",
         },
         user: {

@@ -114,7 +114,7 @@ export default function LockdownPage() {
               <span className="text-rose-700 font-bold">Security Verification Failed</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-slate-500">PayPal Order Status:</span>
+              <span className="text-slate-500">PayShield Order Status:</span>
               <span className="text-emerald-700 font-black flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> VOIDED &amp; CANCELLED (Safe)
               </span>

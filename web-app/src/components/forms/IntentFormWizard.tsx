@@ -613,7 +613,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
               Configure Your Security Questions Vault
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
-              When high-risk transactions occur, PayPal presents dynamic questions derived
+              When high-risk transactions occur, PayShield presents dynamic questions derived
               strictly from your private memories. Remote attackers and automated bots cannot guess them.
             </p>
           </div>

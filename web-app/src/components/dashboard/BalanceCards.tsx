@@ -74,7 +74,7 @@ export function BalanceCards() {
           <div className="flex justify-between items-start mb-6">
             <div>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-200/80">Available Liquidity</span>
-              <div className="text-xs font-bold text-sky-100/60 mt-0.5">PayPal Primary Balance</div>
+              <div className="text-xs font-bold text-sky-100/60 mt-0.5">PayShield Primary Balance</div>
             </div>
             <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center font-black text-lg shadow-inner">
               $
