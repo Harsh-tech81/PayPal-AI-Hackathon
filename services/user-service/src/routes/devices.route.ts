@@ -22,19 +22,26 @@ export async function deviceRoutes(fastify: FastifyInstance) {
       }
 
       if (devices.length === 0) {
-        // Provide standard initial registered device for the authenticated user
-        const userDeviceList = memoryDevices.get(userId) || [
-          {
-            id: `dev_${userId.slice(0, 8)}_1`,
-            deviceName: "Primary Workstation (Trusted Client)",
-            deviceFingerprint: "fp_primary_trusted_device",
-            osType: "Windows / macOS",
-            isTrusted: true,
-            lastUsedAt: new Date().toISOString(),
-          },
-        ];
-        memoryDevices.set(userId, userDeviceList);
-        devices = userDeviceList;
+        // Check if user has devices cached in repository
+        const { userRepository } = await import("../repositories/user.repository.js");
+        const cachedUser = await userRepository.findById(userId);
+        if (cachedUser && Array.isArray(cachedUser.devices) && cachedUser.devices.length > 0) {
+          devices = cachedUser.devices;
+        } else {
+          // Provide standard initial registered device for the authenticated user (user-scoped)
+          const userDeviceList = memoryDevices.get(userId) || [
+            {
+              id: `dev_${userId.slice(0, 8)}_1`,
+              deviceName: "Primary Workstation (Trusted Client)",
+              deviceFingerprint: `fp_${userId.slice(0, 8)}_workstation`,
+              osType: "Windows / macOS",
+              isTrusted: true,
+              lastUsedAt: new Date().toISOString(),
+            },
+          ];
+          memoryDevices.set(userId, userDeviceList);
+          devices = userDeviceList;
+        }
       }
 
       return reply.send({ devices });

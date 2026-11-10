@@ -18,7 +18,10 @@ export async function intentFormRoutes(fastify: FastifyInstance) {
 
       const { secrets } = parsed.data;
       const rawUserId = (parsed.data.userId || "").trim();
-      const userId = rawUserId.length > 0 ? rawUserId : "a0000000-0000-0000-0000-000000000001";
+      if (!rawUserId) {
+        return reply.status(400).send({ error: "userId is required to configure intent vault" });
+      }
+      const userId = rawUserId;
 
       // If user submits 0 anchors (chooses direct payment mode)
       if (secrets.length === 0) {
@@ -80,7 +83,10 @@ export async function intentFormRoutes(fastify: FastifyInstance) {
     try {
       const body = (request.body || {}) as { userId?: string };
       const rawUserId = (body.userId || "").trim();
-      const userId = rawUserId.length > 0 ? rawUserId : "a0000000-0000-0000-0000-000000000001";
+      if (!rawUserId) {
+        return reply.status(400).send({ error: "userId is required to clear intent vault" });
+      }
+      const userId = rawUserId;
 
       await intentRepository.clearIntentSecrets(userId);
       await userRepository.updateIntentCleared(userId);

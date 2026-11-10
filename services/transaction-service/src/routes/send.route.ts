@@ -14,7 +14,10 @@ export async function sendRoutes(fastify: FastifyInstance) {
       }
 
       const body = parsed.data;
-      const userId = (request.headers["x-user-id"] as string) || "a0000000-0000-0000-0000-000000000001";
+      const userId = (request.headers["x-user-id"] as string);
+      if (!userId) {
+        return reply.status(401).send({ error: "Authentication required: Missing x-user-id header" });
+      }
 
       const clientIp = (request.headers["x-forwarded-for"] as string) || request.ip || "127.0.0.1";
       const resolvedIp = body.ipAddress || clientIp;

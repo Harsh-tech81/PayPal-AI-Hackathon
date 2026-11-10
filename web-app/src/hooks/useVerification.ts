@@ -39,7 +39,7 @@ export function useVerification() {
       if (!challengeData) return;
       setIsSubmitting(true);
       try {
-        const userId = localStorage.getItem("payshield_user_id") || "a0000000-0000-0000-0000-000000000001";
+        const userId = (typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null) || "";
         const res = await api.submitChallengeAnswer({
           challengeToken: challengeData.challengeToken,
           transactionId: challengeData.transactionId,

@@ -90,6 +90,24 @@ export const api = {
     return safeJson(res);
   },
 
+  async passkeySignup(data: { fullName: string; email: string; credentialId: string; deviceName?: string }) {
+    const res = await fetch(`${USER_SERVICE}/api/v1/auth/passkey-signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return safeJson(res);
+  },
+
+  async registerPasskey(data: { credentialId: string; userId?: string; email?: string; deviceName?: string }) {
+    const res = await fetch(`${USER_SERVICE}/api/v1/auth/passkey-register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(data),
+    });
+    return safeJson(res);
+  },
+
   async getProfile() {
     const res = await fetch(`${USER_SERVICE}/api/v1/users/me`, {
       headers: getAuthHeaders(),
@@ -99,7 +117,10 @@ export const api = {
 
   async setupIntentVault(secrets: any[], overrideUserId?: string) {
     const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
-    const finalUserId = overrideUserId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const finalUserId = overrideUserId || storedUserId;
+    if (!finalUserId) {
+      return { error: "User is not authenticated. Please log in first." };
+    }
     const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/setup`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -110,7 +131,10 @@ export const api = {
 
   async clearIntentVault(overrideUserId?: string) {
     const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
-    const finalUserId = overrideUserId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const finalUserId = overrideUserId || storedUserId;
+    if (!finalUserId) {
+      return { error: "User is not authenticated. Please log in first." };
+    }
     const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/clear`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -121,7 +145,10 @@ export const api = {
 
   async getVaultStatus(userId?: string) {
     const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
-    const finalUserId = userId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const finalUserId = userId || storedUserId;
+    if (!finalUserId) {
+      return { isConfigured: false, anchorsCount: 0, anchors: [] };
+    }
     const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/status/${encodeURIComponent(finalUserId)}`, {
       headers: getAuthHeaders(),
     });
@@ -130,7 +157,10 @@ export const api = {
 
   async getVaultAnchors(userId?: string) {
     const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
-    const finalUserId = userId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const finalUserId = userId || storedUserId;
+    if (!finalUserId) {
+      return { userId: "", anchors: [] };
+    }
     const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/internal-vault/${encodeURIComponent(finalUserId)}`, {
       headers: getAuthHeaders(),
     });
@@ -203,17 +233,24 @@ export const api = {
 
   // Alerts & Lockdowns
   async getAlertHistory(userId?: string) {
-    const uid = userId || (typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : "a0000000-0000-0000-0000-000000000001");
-    const res = await fetch(`${ALERT_SERVICE}/api/v1/alerts/history/${uid}`);
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+    const uid = userId || storedUserId;
+    if (!uid) {
+      return { logs: [] };
+    }
+    const res = await fetch(`${ALERT_SERVICE}/api/v1/alerts/history/${encodeURIComponent(uid)}`);
     return safeJson(res);
   },
 
   async unfreezeAccount(method: string = "video_kyc") {
-    const uid = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : "a0000000-0000-0000-0000-000000000001";
+    const uid = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+    if (!uid) {
+      return { error: "No active user session to unfreeze." };
+    }
     const res = await fetch(`${ESCALATION_SERVICE}/api/v1/escalate/unfreeze`, {
       method: "POST",
       headers: getAuthHeaders(),
-      body: JSON.stringify({ userId: uid || "a0000000-0000-0000-0000-000000000001", resolutionMethod: method }),
+      body: JSON.stringify({ userId: uid, resolutionMethod: method }),
     });
     return safeJson(res);
   },

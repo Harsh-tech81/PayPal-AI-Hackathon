@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import crypto from "node:crypto";
 import { userRepository } from "../repositories/user.repository.js";
 import { hashPassword, verifyPassword, signToken, RegisterUserSchema, LoginUserSchema, sendUnifiedEmail } from "@payshield/shared";
 import prisma from "../../../../database/prisma-client.js";
@@ -400,33 +401,152 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // 5. Biometric Passkey / Fingerprint Login
+  // 5. Direct Biometric Passkey / Fingerprint Sign Up
+  fastify.post("/api/v1/auth/passkey-signup", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { fullName, email, credentialId, deviceName } = (request.body || {}) as {
+        fullName?: string;
+        email?: string;
+        credentialId?: string;
+        deviceName?: string;
+      };
+
+      if (!fullName || !fullName.trim()) {
+        return reply.status(400).send({ error: "Legal full name is required for passkey account creation" });
+      }
+      if (!email || !email.trim()) {
+        return reply.status(400).send({ error: "Email address is required for passkey account creation" });
+      }
+      if (!credentialId || !credentialId.trim()) {
+        return reply.status(400).send({ error: "Device passkey credential ID is required" });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      const existingUser = await userRepository.findByEmail(normalizedEmail);
+      if (existingUser) {
+        return reply.status(409).send({
+          error: `An account with ${normalizedEmail} already exists. Please log in directly with your passkey.`,
+          alreadyRegistered: true,
+        });
+      }
+
+      // Generate secure hardware enclave backed password hash
+      const randomSecret = `passkey_${crypto.randomBytes(32).toString("hex")}`;
+      const passwordHash = await hashPassword(randomSecret);
+
+      const user = await userRepository.create({
+        fullName: fullName.trim(),
+        email: normalizedEmail,
+        passwordHash,
+      });
+
+      // Bind device passkey directly to this brand new user
+      await userRepository.registerDevicePasskey({
+        userId: user.id,
+        credentialId: credentialId.trim(),
+        deviceName: deviceName || "Biometric Passkey Authenticator",
+      });
+
+      const token = signToken({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        isFrozen: false,
+        intentCompleted: false,
+      });
+
+      return reply.status(201).send({
+        status: "success",
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          phone: user.phone || null,
+          isFrozen: false,
+          intentFormCompleted: false,
+        },
+        message: `Account created successfully with device passkey for ${user.email}.`,
+      });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Failed to sign up with passkey", message: err.message });
+    }
+  });
+
+  // 6. Register / Bind a Biometric Passkey to an Account
+  fastify.post("/api/v1/auth/passkey-register", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { userId, email, credentialId, deviceName } = (request.body || {}) as {
+        userId?: string;
+        email?: string;
+        credentialId?: string;
+        deviceName?: string;
+      };
+
+      if (!credentialId || !credentialId.trim()) {
+        return reply.status(400).send({ error: "Missing required credentialId for passkey enrollment" });
+      }
+
+      let user = null;
+      if (userId && userId.trim()) {
+        user = await userRepository.findById(userId.trim());
+      }
+      if (!user && email && email.trim()) {
+        user = await userRepository.findByEmail(email.trim());
+      }
+
+      if (!user) {
+        return reply.status(404).send({ error: "No user found matching this account for passkey enrollment." });
+      }
+
+      await userRepository.registerDevicePasskey({
+        userId: user.id,
+        credentialId: credentialId.trim(),
+        deviceName: deviceName || "Biometric Passkey Authenticator",
+      });
+
+      return reply.send({
+        status: "success",
+        message: `Biometric passkey successfully registered for ${user.email}.`,
+        userId: user.id,
+        credentialId: credentialId.trim(),
+      });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Failed to register passkey", message: err.message });
+    }
+  });
+
+  // 6. Biometric Passkey / Fingerprint Login
   fastify.post("/api/v1/auth/passkey-login", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { email, credentialId } = (request.body || {}) as { email?: string; credentialId?: string };
 
       let user = null;
-      if (email && email.trim()) {
+
+      // 1. If credentialId is provided, look up the exact user this passkey belongs to
+      if (credentialId && credentialId.trim()) {
+        user = await userRepository.findByDeviceFingerprint(credentialId.trim());
+      }
+
+      // 2. If not found by credentialId, but email was provided, look up user by email
+      if (!user && email && email.trim()) {
         user = await userRepository.findByEmail(email.trim());
       }
 
-      if (!user && credentialId) {
-        try {
-          const device = await prisma.device.findFirst({
-            where: { deviceFingerprint: credentialId },
-          });
-          if (device?.userId) {
-            user = await userRepository.findById(device.userId);
-          }
-        } catch {}
+      // 3. If both email and credentialId were supplied, strictly verify they belong to the same account
+      if (user && email && email.trim() && user.email.toLowerCase() !== email.trim().toLowerCase()) {
+        return reply.status(403).send({
+          error: `This biometric passkey belongs to ${user.email}, not ${email.trim()}. Please enter the password for ${email.trim()}.`,
+        });
       }
 
+      // 4. Strict check: NEVER fallback to findFirstUser() or another user!
       if (!user) {
-        user = await userRepository.findFirstUser();
-      }
-
-      if (!user) {
-        return reply.status(404).send({ error: "No account enrolled for this biometric passkey. Please sign in with password first." });
+        return reply.status(404).send({
+          error: "No account enrolled for this biometric passkey. Please sign in with your email and password first.",
+        });
       }
 
       // Unfreeze account automatically since the user verified physical hardware biometrics at login

@@ -1,11 +1,25 @@
 import type { Config } from "tailwindcss";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const config: Config = {
   darkMode: "class",
   content: [
+    path.join(__dirname, "src/**/*.{js,ts,jsx,tsx,mdx}").replace(/\\/g, "/"),
+    path.join(__dirname, "src/pages/**/*.{js,ts,jsx,tsx,mdx}").replace(/\\/g, "/"),
+    path.join(__dirname, "src/components/**/*.{js,ts,jsx,tsx,mdx}").replace(/\\/g, "/"),
+    path.join(__dirname, "src/app/**/*.{js,ts,jsx,tsx,mdx}").replace(/\\/g, "/"),
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./web-app/src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./web-app/src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./web-app/src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./web-app/src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {

@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Shield, Lock, Mail, Phone, User, ArrowRight, ArrowLeft, AlertCircle, CheckCircle2, KeyRound, RefreshCw, Check } from "lucide-react";
+import { Shield, Lock, Mail, Phone, User, ArrowRight, ArrowLeft, AlertCircle, CheckCircle2, KeyRound, RefreshCw, Check, Fingerprint } from "lucide-react";
 import { api } from "../../lib/api-client";
 import { useAuth } from "../../hooks/useAuth";
+import { registerBiometricPasskey } from "../../lib/webauthn";
 
 export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => void }) {
   const [step, setStep] = useState<"details" | "otp">("details");
@@ -15,10 +16,60 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
   const [otpCode, setOtpCode] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [otpNotice, setOtpNotice] = useState<string | null>(null);
 
   const { loginUser } = useAuth();
+
+  // Fast Passkey / Biometric Sign Up
+  const handlePasskeySignup = async () => {
+    if (!agree) {
+      setError("Please agree to the User Agreement & Terms");
+      return;
+    }
+    if (!fullName.trim()) {
+      setError("Please enter your legal full name");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setPasskeyLoading(true);
+    setError(null);
+
+    try {
+      const reg = await registerBiometricPasskey({
+        name: email.trim().toLowerCase(),
+        displayName: fullName.trim(),
+      });
+
+      if (!reg.success || !reg.credential) {
+        setError(reg.error || "Biometric passkey registration was cancelled.");
+        setPasskeyLoading(false);
+        return;
+      }
+
+      const signupRes = await api.passkeySignup({
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        credentialId: reg.credential.id,
+      });
+
+      if (signupRes.token && signupRes.user) {
+        loginUser(signupRes.token, signupRes.user);
+        if (onRegisterSuccess) onRegisterSuccess();
+      } else {
+        setError(signupRes.error || signupRes.message || "Failed to create account with passkey.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to register passkey account.");
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   // Step 1: Submit details and send real OTP via Twilio SMS / Gmail SMTP
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -215,7 +266,7 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || passkeyLoading}
               className="w-full py-3.5 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 group"
             >
               {loading ? (
@@ -230,6 +281,39 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
                 </>
               )}
             </button>
+          </div>
+
+          <div className="relative my-3 pt-1">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200/80" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase">
+              <span className="bg-white/95 px-3 text-slate-400 font-black tracking-wider">Or Instant Passkey Sign Up</span>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={handlePasskeySignup}
+              disabled={loading || passkeyLoading}
+              className="w-full py-3.5 px-4 rounded-full font-bold text-xs bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-[#0070ba] border border-blue-200/90 shadow-sm transition-all duration-200 flex items-center justify-center gap-2.5 active:scale-[0.99] disabled:opacity-50 group"
+            >
+              {passkeyLoading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#0070ba]" />
+                  <span>Enrolling Hardware Passkey on Device...</span>
+                </>
+              ) : (
+                <>
+                  <Fingerprint className="w-4 h-4 text-[#0070ba] group-hover:scale-110 transition-transform" />
+                  <span>Sign Up with Passkey / Fingerprint (Fast)</span>
+                </>
+              )}
+            </button>
+            <p className="text-[11px] text-center text-slate-400 font-medium pt-2">
+              Requires device PIN, fingerprint, or Windows Hello. Zero passwords needed.
+            </p>
           </div>
         </form>
       ) : (

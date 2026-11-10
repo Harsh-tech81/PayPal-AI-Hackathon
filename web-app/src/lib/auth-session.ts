@@ -12,6 +12,11 @@ export interface AuthSession {
 
 export function saveSession(token: string, user: any) {
   if (typeof window === "undefined") return;
+  const prevUserId = localStorage.getItem("payshield_user_id");
+  if (prevUserId && prevUserId !== user.id) {
+    localStorage.removeItem("payshield_intent_draft");
+    localStorage.removeItem("payshield_alerts_read_at");
+  }
   localStorage.setItem("payshield_token", token);
   localStorage.setItem("payshield_user_id", user.id || "");
   localStorage.setItem("payshield_user_email", user.email || "");
@@ -61,4 +66,7 @@ export function clearSession() {
   localStorage.removeItem("payshield_user_frozen");
   localStorage.removeItem("payshield_intent_completed");
   localStorage.removeItem("payshield_intent_draft");
+  localStorage.removeItem("payshield_alerts_read_at");
+  localStorage.removeItem("payshield_frozen_until");
+  localStorage.removeItem("payshield_webauthn_biometric_credential");
 }
