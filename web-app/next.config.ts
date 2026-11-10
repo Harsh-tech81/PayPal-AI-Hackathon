@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
   },
   webpack: (config, { dev }) => {
     if (dev) {
-      // Disable Webpack packfile disk caching on Windows to prevent ENOENT rename crashes
-      config.cache = false;
+      // Use in-memory caching to prevent Windows filesystem ENOENT file locks while ensuring CSS modules compile properly
+      config.cache = { type: "memory" };
     }
     return config;
   },

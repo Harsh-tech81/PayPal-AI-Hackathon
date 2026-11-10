@@ -2,15 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShieldCheck, Smartphone, Laptop, Trash2, KeyRound, Lock, Check, Cpu, Sparkles, ShieldAlert, Fingerprint } from "lucide-react";
+import { ShieldCheck, Smartphone, Laptop, Trash2, KeyRound, Lock, Check, Cpu, Sparkles, ShieldAlert, Fingerprint, RefreshCw } from "lucide-react";
 import { api } from "../../../lib/api-client";
 import { VideoKycModal } from "../../../components/verification/VideoKycModal";
+import { registerBiometricPasskey, getStoredBiometricCredential } from "../../../lib/webauthn";
+import { getSession } from "../../../lib/auth-session";
 
 export default function SecurityPage() {
   const [devices, setDevices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAccountFrozen, setIsAccountFrozen] = useState(false);
   const [isUnfreezeModalOpen, setIsUnfreezeModalOpen] = useState(false);
+  const [enrollingPasskey, setEnrollingPasskey] = useState(false);
+  const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const frozenState = typeof window !== "undefined" ? localStorage.getItem("payshield_user_frozen") === "true" : false;
@@ -46,6 +50,30 @@ export default function SecurityPage() {
       setDevices((prev) => prev.filter((d) => d.id !== id));
     } catch (err: any) {
       alert(`Error revoking device: ${err.message}`);
+    }
+  };
+
+  const handleEnrollPasskey = async () => {
+    setEnrollingPasskey(true);
+    setPasskeyNotice(null);
+    try {
+      const session = getSession();
+      const res = await registerBiometricPasskey({
+        id: session?.user?.id,
+        name: session?.user?.email,
+        displayName: session?.user?.fullName,
+      });
+      if (res.success) {
+        setPasskeyNotice("Passkey / Fingerprint successfully enrolled for your account on this device!");
+        const devRes = await api.getDevices();
+        if (devRes.devices) setDevices(devRes.devices);
+      } else {
+        setPasskeyNotice(res.error || "Biometric enrollment was cancelled.");
+      }
+    } catch (err: any) {
+      setPasskeyNotice(err.message || "Failed to enroll passkey on this device.");
+    } finally {
+      setEnrollingPasskey(false);
     }
   };
 
@@ -116,17 +144,44 @@ export default function SecurityPage() {
 
       {/* Trusted Devices Section */}
       <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl space-y-6">
-        <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-lg font-black text-slate-950">Active Trusted Devices</h3>
+            <h3 className="text-lg font-black text-slate-950">Active Trusted Devices &amp; Biometrics</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Recognized devices allow fast, seamless payments without secondary security verification.
+              Enrolled passkeys and recognized hardware devices allow secure, instant biometric login.
             </p>
           </div>
-          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-            {devices.length} Devices
-          </span>
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={handleEnrollPasskey}
+              disabled={enrollingPasskey}
+              className="py-2 px-4 rounded-full font-bold text-xs bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-[#0070ba] border border-blue-200 transition flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+            >
+              {enrollingPasskey ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#0070ba]" />
+                  <span>Enrolling...</span>
+                </>
+              ) : (
+                <>
+                  <Fingerprint className="w-3.5 h-3.5 text-[#0070ba]" />
+                  <span>+ Enroll Device Passkey</span>
+                </>
+              )}
+            </button>
+            <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+              {devices.length} Devices
+            </span>
+          </div>
         </div>
+
+        {passkeyNotice && (
+          <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-xs font-semibold text-[#0070ba] flex items-center gap-2 animate-fade-in">
+            <Sparkles className="w-4 h-4 text-[#0070ba] shrink-0" />
+            <span>{passkeyNotice}</span>
+          </div>
+        )}
 
         {devices.length === 0 && !loading ? (
           <div className="py-8 text-center text-xs text-slate-500">

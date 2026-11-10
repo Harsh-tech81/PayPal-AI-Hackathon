@@ -189,12 +189,15 @@ export default function SendTransactionsPage() {
       const now = new Date();
       const currentLocalTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
+      const currentUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+      const userFingerprint = currentUserId ? `fp_${currentUserId.slice(0, 8)}_workstation` : "fp_trusted_client";
+
       const payload = {
         recipientEmail: recipientEmail.trim(),
         amount: parsedAmount,
         currency: "USD",
         description: description.trim(),
-        deviceFingerprint: simulateAttack ? "fp_foreign_tor_browser" : "fp_primary_trusted_device",
+        deviceFingerprint: simulateAttack ? "fp_foreign_tor_browser" : userFingerprint,
         ipAddress: simulateAttack ? "185.220.101.5" : clientIp,
         location: simulateAttack ? "Frankfurt Tor Node" : "Verified Client",
         timeOfTransfer: currentLocalTime,

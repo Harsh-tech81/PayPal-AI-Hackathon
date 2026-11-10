@@ -40,13 +40,17 @@ export function VideoKycModal({ isOpen, onClose, onSuccess, onVerified }: VideoK
 
     try {
       const session = getSession();
-      const existing = getStoredBiometricCredential();
+      const currentEmail = session?.user?.email;
+      const currentUserId = session?.user?.id;
+      const existing = getStoredBiometricCredential(currentEmail);
 
-      if (mode === "register" || !existing || existing.id.startsWith("dev_")) {
+      const isPasskeyMismatch = Boolean(existing?.userEmail && currentEmail && existing.userEmail.toLowerCase().trim() !== currentEmail.toLowerCase().trim());
+
+      if (mode === "register" || !existing || existing.id.startsWith("dev_") || isPasskeyMismatch) {
         const regRes = await registerBiometricPasskey({
-          id: session?.user?.id || "owner-kyc-biometric",
-          name: session?.user?.email || "owner@payshield.ai",
-          displayName: session?.user?.fullName || "PayShield Account Owner",
+          id: currentUserId || undefined,
+          name: currentEmail || undefined,
+          displayName: session?.user?.fullName || undefined,
         });
 
         if (!regRes.success) {
@@ -59,11 +63,11 @@ export function VideoKycModal({ isOpen, onClose, onSuccess, onVerified }: VideoK
         return;
       }
 
-      const verifyRes = await verifyBiometricPasskey();
+      const verifyRes = await verifyBiometricPasskey(currentEmail);
       if (!verifyRes.success) {
         setStep("error");
         setErrorMessage(
-          verifyRes.error || "No passkey found on this device. Click 'Register Android Fingerprint' below to set it up."
+          verifyRes.error || "No passkey found on this device for your account. Click 'Register Android Fingerprint' below to set it up."
         );
         return;
       }

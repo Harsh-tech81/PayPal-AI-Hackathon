@@ -46,17 +46,39 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
     setError(null);
 
     try {
-      const stored = getStoredBiometricCredential();
-      const verifyRes = await verifyBiometricPasskey();
+      let targetEmail = email.trim();
+      const stored = getStoredBiometricCredential(targetEmail || undefined);
+
+      if (!targetEmail) {
+        if (stored?.userEmail) {
+          targetEmail = stored.userEmail;
+          setEmail(stored.userEmail);
+        } else {
+          setError("Please enter your email address above to sign in with your device passkey.");
+          setPasskeyLoading(false);
+          return;
+        }
+      }
+
+      // If user typed an email, verify this device actually has a passkey enrolled for that user
+      if (stored?.userEmail && stored.userEmail.toLowerCase() !== targetEmail.toLowerCase()) {
+        setError(`This device has a passkey enrolled for ${stored.userEmail}, not ${targetEmail}. Please sign in with your password, or register a new passkey.`);
+        setPasskeyLoading(false);
+        return;
+      }
+
+      const verifyRes = await verifyBiometricPasskey(targetEmail);
       if (!verifyRes.success) {
         setError(verifyRes.error || "Biometric passkey authentication was cancelled or failed.");
         setPasskeyLoading(false);
         return;
       }
 
+      const credIdToSend = verifyRes.credential?.id || stored?.id;
+
       const res = await api.passkeyLogin({
-        email: email.trim() || undefined,
-        credentialId: stored?.id,
+        email: targetEmail,
+        credentialId: credIdToSend,
       });
 
       if (res.token && res.user) {
@@ -67,7 +89,7 @@ export function LoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
         loginUser(res.token, { ...res.user, isFrozen: false });
         if (onLoginSuccess) onLoginSuccess();
       } else {
-        setError(res.error || "No account found matching this passkey. Please sign in with password first.");
+        setError(res.error || `No account found for ${targetEmail} matching this passkey. Please sign in with password first.`);
       }
     } catch (err: any) {
       setError(err.message || "Failed to authenticate with passkey.");
