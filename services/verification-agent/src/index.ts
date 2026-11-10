@@ -10,7 +10,7 @@ import cors from "@fastify/cors";
 import { challengeRoutes } from "./routes/challenge.route.js";
 import { answerRoutes } from "./routes/answer.route.js";
 
-const PORT = parseInt(process.env.VERIFICATION_AGENT_PORT || "8003", 10);
+const PORT = parseInt(process.env.PORT || process.env.VERIFICATION_AGENT_PORT || "8003", 10);
 const HOST = "0.0.0.0";
 
 const fastify = Fastify({

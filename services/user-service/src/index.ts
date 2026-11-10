@@ -13,7 +13,7 @@ import { profileRoutes } from "./routes/profile.route.js";
 import { intentFormRoutes } from "./routes/intent-form.route.js";
 import { deviceRoutes } from "./routes/devices.route.js";
 
-const PORT = parseInt(process.env.USER_SERVICE_PORT || "8001", 10);
+const PORT = parseInt(process.env.PORT || process.env.USER_SERVICE_PORT || "8001", 10);
 const HOST = "0.0.0.0";
 
 const fastify = Fastify({
