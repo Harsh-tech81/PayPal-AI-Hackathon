@@ -11,9 +11,9 @@
   ],
   "scripts": {
     "start": "tsx services/transaction-service/src/index.ts",
-    "dev:services": "tsx services/user-service/src/index.ts & tsx services/transaction-service/src/index.ts & tsx services/verification-agent/src/index.ts & tsx services/risk-engine/src/index.ts & tsx services/alert-service/src/index.ts & tsx services/escalation-service/src/index.ts",
+    "dev:services": "tsx watch services/user-service/src/index.ts & tsx watch services/transaction-service/src/index.ts & tsx watch services/verification-agent/src/index.ts & tsx watch services/risk-engine/src/index.ts & tsx watch services/alert-service/src/index.ts & tsx watch services/escalation-service/src/index.ts",
     "dev:web": "npm --prefix web-app run dev",
-    "dev": "concurrently -n \"user,txn,verify,risk,alert,escalate,web\" -c \"blue,green,magenta,yellow,red,cyan,white\" \"npx tsx services/user-service/src/index.ts\" \"npx tsx services/transaction-service/src/index.ts\" \"npx tsx services/verification-agent/src/index.ts\" \"npx tsx services/risk-engine/src/index.ts\" \"npx tsx services/alert-service/src/index.ts\" \"npx tsx services/escalation-service/src/index.ts\" \"npm --prefix web-app run dev\"",
+    "dev": "concurrently -n \"user,txn,verify,risk,alert,escalate,web\" -c \"blue,green,magenta,yellow,red,cyan,white\" \"npx tsx watch services/user-service/src/index.ts\" \"npx tsx watch services/transaction-service/src/index.ts\" \"npx tsx watch services/verification-agent/src/index.ts\" \"npx tsx watch services/risk-engine/src/index.ts\" \"npx tsx watch services/alert-service/src/index.ts\" \"npx tsx watch services/escalation-service/src/index.ts\" \"npm --prefix web-app run dev\"",
     "test": "vitest run",
     "db:push": "prisma db push --schema=database/prisma/schema.prisma",
     "db:seed": "tsx database/seeds/seed-demo-data.ts",

@@ -18,6 +18,7 @@ export function saveSession(token: string, user: any) {
   localStorage.setItem("payshield_user_name", user.fullName || "User");
   localStorage.setItem("payshield_user_phone", user.phone || "");
   localStorage.setItem("payshield_user_frozen", user.isFrozen ? "true" : "false");
+  localStorage.setItem("payshield_intent_completed", user.intentFormCompleted ? "true" : "false");
 }
 
 export function getSession(): AuthSession {
@@ -28,6 +29,7 @@ export function getSession(): AuthSession {
   const fullName = localStorage.getItem("payshield_user_name");
   const phone = localStorage.getItem("payshield_user_phone");
   const isFrozen = localStorage.getItem("payshield_user_frozen") === "true";
+  const intentFormCompleted = localStorage.getItem("payshield_intent_completed") === "true";
 
   if (!token || !userId) {
     return {
@@ -44,6 +46,7 @@ export function getSession(): AuthSession {
       fullName: fullName || "User",
       phone: phone || undefined,
       isFrozen,
+      intentFormCompleted,
     },
   };
 }
@@ -56,4 +59,6 @@ export function clearSession() {
   localStorage.removeItem("payshield_user_name");
   localStorage.removeItem("payshield_user_phone");
   localStorage.removeItem("payshield_user_frozen");
+  localStorage.removeItem("payshield_intent_completed");
+  localStorage.removeItem("payshield_intent_draft");
 }

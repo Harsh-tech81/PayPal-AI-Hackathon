@@ -97,12 +97,12 @@ async function getRAGMongoClient(): Promise<MongoClient | null> {
 
   try {
     const client = new MongoClient(mongoConfig.uri, {
-      serverSelectionTimeoutMS: 2000,
-      connectTimeoutMS: 2000,
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 8000,
     });
     const connectPromise = client.connect();
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("MongoDB connect timeout")), 2000)
+      setTimeout(() => reject(new Error("MongoDB connect timeout")), 8000)
     );
     await Promise.race([connectPromise, timeoutPromise]);
     cachedRAGClient = client;
