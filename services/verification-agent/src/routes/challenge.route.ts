@@ -3,7 +3,7 @@ import { verificationGraph } from "../graph/verification-graph.js";
 import { GenerateChallengeSchema } from "@payshield/shared";
 
 export async function challengeRoutes(fastify: FastifyInstance) {
-  fastify.post("/api/v1/verify/challenge", async (request: FastifyRequest, reply: FastifyReply) => {
+  const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const parsed = GenerateChallengeSchema.safeParse(request.body);
       if (!parsed.success) {
@@ -52,5 +52,8 @@ export async function challengeRoutes(fastify: FastifyInstance) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Failed to initiate challenge", message: err.message });
     }
-  });
+  };
+
+  fastify.post("/api/v1/verify/challenge", handler);
+  fastify.post("/api/v1/verification/challenge", handler);
 }

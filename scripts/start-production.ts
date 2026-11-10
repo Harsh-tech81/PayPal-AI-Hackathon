@@ -22,14 +22,28 @@ process.env.TRANSACTION_SERVICE_URL = process.env.TRANSACTION_SERVICE_URL || "ht
 const GATEWAY_PORT = parseInt(process.env.PORT || "8000", 10);
 
 const ROUTE_MAP: Array<{ prefix: string; port: number }> = [
+  // User Service (Port 8001)
   { prefix: "/api/v1/auth", port: 8001 },
   { prefix: "/api/v1/users", port: 8001 },
   { prefix: "/api/v1/intent-form", port: 8001 },
   { prefix: "/api/v1/devices", port: 8001 },
+
+  // Transaction Service (Port 8002)
   { prefix: "/api/v1/transactions", port: 8002 },
+  { prefix: "/api/v1/paypal", port: 8002 },
+
+  // Verification Agent (Port 8003)
+  { prefix: "/api/v1/verify", port: 8003 },
   { prefix: "/api/v1/verification", port: 8003 },
+
+  // Risk Engine (Port 8004)
   { prefix: "/api/v1/risk", port: 8004 },
+
+  // Alert Service (Port 8005)
   { prefix: "/api/v1/alerts", port: 8005 },
+
+  // Escalation Service (Port 8006)
+  { prefix: "/api/v1/escalate", port: 8006 },
   { prefix: "/api/v1/escalation", port: 8006 },
 ];
 

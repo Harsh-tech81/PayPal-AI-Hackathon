@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { executeAccountUnfreeze } from "../actions/unfreeze-manager.js";
 
 export async function unfreezeRoutes(fastify: FastifyInstance) {
-  fastify.post("/api/v1/escalate/unfreeze", async (request: FastifyRequest, reply: FastifyReply) => {
+  const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as {
         userId: string;
@@ -30,5 +30,8 @@ export async function unfreezeRoutes(fastify: FastifyInstance) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Failed to unfreeze account", message: err.message });
     }
-  });
+  };
+
+  fastify.post("/api/v1/escalate/unfreeze", handler);
+  fastify.post("/api/v1/escalation/unfreeze", handler);
 }
