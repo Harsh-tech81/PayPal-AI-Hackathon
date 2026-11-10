@@ -26,6 +26,18 @@ export async function challengeRoutes(fastify: FastifyInstance) {
         recipientEmail: body.recipientEmail,
       });
 
+      // ── IMPROVEMENT #2: If user has no vault → skip challenge, auto-approve ──
+      if ((state as any).noVaultConfigured === true) {
+        return reply.send({
+          status: "NO_VAULT_AUTO_APPROVED",
+          noVault: true,
+          transactionId: body.transactionId,
+          message:
+            "No cognitive vault configured for this user. Payment auto-approved. Set up your Memory Vault to enable enhanced security for future transactions.",
+        });
+      }
+      // ─────────────────────────────────────────────────────────────────────────
+
       const timeoutSeconds = parseInt(process.env.LANGGRAPH_TIMEOUT_SECONDS || "10", 10);
       return reply.send({
         status: "CHALLENGE_ACTIVE",
@@ -34,7 +46,7 @@ export async function challengeRoutes(fastify: FastifyInstance) {
         question: state.challengeRiddle,
         timeoutSeconds,
         countdownExpiresAt: state.countdownExpiresAt,
-        message: `Dynamic cognitive challenge formulated. ${timeoutSeconds}-second cognitive verification window active.`,
+        message: `Your personal memory question is ready. Answer at your own pace — no time pressure.`,
       });
     } catch (err: any) {
       fastify.log.error(err);

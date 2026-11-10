@@ -8,16 +8,35 @@ import { forensicNode } from "./nodes/forensic-node.js";
 
 /**
  * PayShield Master LangGraph Verification Engine
- * Coordinates: RAG Memory Retrieval -> Challenge Formulator -> Human Wait Window -> Semantic Judge -> Escalation
+ *
+ * IMPROVEMENTS:
+ * - If user has no vault configured, `initiateChallenge` returns a special
+ *   `noVaultConfigured: true` flag so the payment orchestrator can auto-approve
+ *   without asking any challenge question.
+ * - Only the user's OWN vault questions are asked (via updated rag-retriever).
+ * - Questions are rotated deterministically by payment amount tier.
  */
 
 export class VerificationGraphRunner {
   /**
-   * Phase 1: Formulates the challenge riddle & arms the 10s countdown.
+   * Phase 1: Retrieves user's vault anchor and formulates the riddle.
+   * Returns `noVaultConfigured: true` if the user hasn't set up a vault —
+   * the caller must then skip the challenge and auto-approve.
    */
-  async initiateChallenge(initialState: VerificationState): Promise<VerificationState> {
-    // 1. Contextual RAG lookup
+  async initiateChallenge(
+    initialState: VerificationState
+  ): Promise<VerificationState & { noVaultConfigured?: boolean }> {
+    // 1. Contextual RAG lookup — only user's own vault
     const ragUpdate = await ragRetrieverNode(initialState);
+
+    // If user has no vault, signal the orchestrator to skip the challenge
+    if ((ragUpdate as any).noVault === true) {
+      return {
+        ...initialState,
+        noVaultConfigured: true,
+      } as any;
+    }
+
     let state: VerificationState = { ...initialState, ...ragUpdate };
 
     // 2. Challenge Formulation with Gemini 1.5 Flash
@@ -28,7 +47,7 @@ export class VerificationGraphRunner {
   }
 
   /**
-   * Phase 2: Evaluates the human response within the 10s window.
+   * Phase 2: Evaluates the human response.
    */
   async processAnswer(
     state: VerificationState,
@@ -51,7 +70,7 @@ export class VerificationGraphRunner {
     const evalUpdate = await evaluatorNode(current);
     current = { ...current, ...evalUpdate };
 
-    // 5. Borderline handling
+    // 5. Borderline handling — user's hint is surfaced, not a generic one
     if (current.decision?.is_borderline) {
       const adaptiveUpdate = await adaptiveFollowupNode(current);
       current = { ...current, ...adaptiveUpdate };
