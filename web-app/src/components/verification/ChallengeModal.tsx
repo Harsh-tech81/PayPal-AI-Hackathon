@@ -10,7 +10,7 @@ interface ChallengeModalProps {
   challengeData: VerificationChallengeData | null;
   onClose: () => void;
   onSubmit: (answer: string, elapsedMs: number, isTimeout: boolean) => Promise<any>;
-  onSuccess?: () => void;
+  onSuccess?: (res?: any) => void;
   onFraudLockdown?: (dossier?: any) => void;
 }
 
@@ -62,7 +62,7 @@ export function ChallengeModal({
     if (res?.status === "APPROVED" || res?.is_verified) {
       setStatusMessage("Verified! Payment approved and funds moving.");
       setTimeout(() => {
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(res);
         onClose();
       }, 700);
     } else {
