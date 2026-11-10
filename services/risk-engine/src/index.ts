@@ -9,7 +9,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { scoreRoutes } from "./routes/score.route.js";
 
-const PORT = parseInt(process.env.PORT || process.env.RISK_ENGINE_PORT || "8004", 10);
+const PORT = parseInt(process.env.RISK_ENGINE_PORT || "8004", 10);
 const HOST = "0.0.0.0";
 
 const fastify = Fastify({

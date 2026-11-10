@@ -12,7 +12,7 @@ import { historyRoutes } from "./routes/history.route.js";
 import { approveRoutes } from "./routes/approve.route.js";
 import { rejectRoutes } from "./routes/reject.route.js";
 
-const PORT = parseInt(process.env.PORT || process.env.TRANSACTION_SERVICE_PORT || "8002", 10);
+const PORT = parseInt(process.env.TRANSACTION_SERVICE_PORT || "8002", 10);
 const HOST = "0.0.0.0";
 
 const fastify = Fastify({

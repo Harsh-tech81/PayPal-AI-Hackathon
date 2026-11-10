@@ -11,7 +11,7 @@ import { sendAlertRoutes } from "./routes/send-alert.route.js";
 import { alertHistoryRoutes } from "./routes/alert-history.route.js";
 import { receiptRoutes } from "./routes/receipt.route.js";
 
-const PORT = parseInt(process.env.PORT || process.env.ALERT_SERVICE_PORT || "8005", 10);
+const PORT = parseInt(process.env.ALERT_SERVICE_PORT || "8005", 10);
 const HOST = "0.0.0.0";
 
 const fastify = Fastify({

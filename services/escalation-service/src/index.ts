@@ -11,7 +11,7 @@ import { freezeRoutes } from "./routes/freeze.route.js";
 import { unfreezeRoutes } from "./routes/unfreeze.route.js";
 import { reportRoutes } from "./routes/report.route.js";
 
-const PORT = parseInt(process.env.PORT || process.env.ESCALATION_SERVICE_PORT || "8006", 10);
+const PORT = parseInt(process.env.ESCALATION_SERVICE_PORT || "8006", 10);
 const HOST = "0.0.0.0";
 
 const fastify = Fastify({
