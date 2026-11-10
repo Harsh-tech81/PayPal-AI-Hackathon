@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const TIMEOUT_MS = 4000;
 
 /**
@@ -14,10 +13,11 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
     throw new Error("Missing GEMINI_API_KEY");
   }
 
-  const rawModel = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
-  const modelName = rawModel.includes("1.5") || rawModel.includes("2.5")
-    ? "gemini-3.5-flash-lite"
-    : rawModel;
+  const rawModel = (process.env.GEMINI_MODEL || "gemini-1.5-flash").trim();
+  const modelName =
+    rawModel.toLowerCase().includes("flash") || rawModel.toLowerCase().includes("1.5")
+      ? "gemini-1.5-flash"
+      : rawModel;
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
     modelName
@@ -28,30 +28,17 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
 
   try {
     const payload: any = {
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 256,
-      },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
     };
 
     if (systemInstruction) {
-      payload.systemInstruction = {
-        parts: [{ text: systemInstruction }],
-      };
+      payload.systemInstruction = { parts: [{ text: systemInstruction }] };
     }
 
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY,
-      },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
@@ -74,86 +61,26 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
   }
 }
 
-/**
- * 1. Dynamic Challenge Formulator (< 400ms)
- * Transforms a personal memory anchor into an unpredictable riddle.
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Dynamic Challenge Formulator (Preserves user's exact memory prompt)
+// ─────────────────────────────────────────────────────────────────────────────
 export async function generateDynamicRiddle(
   anchorOrPrompt: { prompt: string; plainAnswer: string; hint?: string } | string,
   secretOrTxn?: string | { amount?: number; location?: string },
   txnContext?: { amount?: number; location?: string }
 ): Promise<string> {
-  const prompt = typeof anchorOrPrompt === "string" ? anchorOrPrompt : anchorOrPrompt?.prompt || "";
-  const plainAnswer = typeof anchorOrPrompt === "string"
-    ? (typeof secretOrTxn === "string" ? secretOrTxn : "")
-    : anchorOrPrompt?.plainAnswer || "";
-  const hint = typeof anchorOrPrompt === "object" ? anchorOrPrompt?.hint || "" : "";
-
-  const systemInstruction = `You are the PayShield AI Cognitive Verification Agent.
-Your goal is to formulate a short, intriguing, one-sentence security riddle based on the user's private memory anchor.
-CRITICAL RULES:
-1. NEVER reveal the secret answer in the question.
-2. Keep the riddle under 20 words.
-3. Make it natural and conversational so a legitimate human can recall and answer in 5 seconds.
-4. Return ONLY the riddle question, no explanations.`;
-
-  const userPrompt = `Anchor Prompt: "${prompt}"
-Anchor Secret: "${plainAnswer}"
-Hint: "${hint}"
-Create the dynamic 10-second challenge riddle for the user.`;
-
-  try {
-    const riddle = await callGeminiApi(userPrompt, systemInstruction);
-    return riddle.replace(/^"|"$/g, "");
-  } catch (err: any) {
-    // Deterministic Circuit Breaker: fallback to dynamic template for all 10 intent presets
-    console.warn("[Gemini Circuit Breaker] Formulator fallback triggered:", err.message);
-    const lowerPrompt = (prompt || "").toLowerCase();
-    const lowerAns = (plainAnswer || "").toLowerCase();
-
-    if (lowerPrompt.includes("dog") || lowerAns.includes("bruno") || lowerPrompt.includes("pet")) {
-      return "Who used to wag their tail and beg for your morning biscuits when you woke up?";
-    }
-    if (lowerPrompt.includes("grandmother") || lowerAns.includes("sunshine")) {
-      return "What secret pet name did your grandmother call you when you were sick in bed?";
-    }
-    if (lowerPrompt.includes("tumble") || lowerPrompt.includes("winter") || lowerAns.includes("zurich")) {
-      return "Where did you take a cold tumble in the snow during a winter vacation?";
-    }
-    if (lowerPrompt.includes("food") || lowerAns.includes("shake") || lowerAns.includes("fries")) {
-      return "What quirky comfort food combination do you secretly eat when you are home alone?";
-    }
-    if (lowerPrompt.includes("song") || lowerPrompt.includes("shower") || lowerAns.includes("rhapsody")) {
-      return "What iconic song do you always sing out loud in the shower when stressed?";
-    }
-    if (lowerPrompt.includes("paycheck") || lowerPrompt.includes("bought") || lowerAns.includes("guitar")) {
-      return "What was the very first memorable item you bought with your own hard-earned paycheck?";
-    }
-    if (lowerPrompt.includes("lucky") || lowerPrompt.includes("digit") || lowerPrompt.includes("number") || lowerAns.includes("742")) {
-      return "What is your secret lucky 3-digit number and private memory code?";
-    }
-    if (lowerPrompt.includes("street") || lowerPrompt.includes("knee") || lowerAns.includes("elm")) {
-      return "What was the name of the street where you fell and scraped your knee as a child?";
-    }
-    if (lowerPrompt.includes("teacher") || lowerAns.includes("green") || lowerAns.includes("captain")) {
-      return "What was the beloved nickname of your favorite elementary school teacher?";
-    }
-    if (lowerPrompt.includes("car") || lowerPrompt.includes("wagon") || lowerPrompt.includes("road-trip")) {
-      return "What was the color and style of your family's oldest unforgettable road-trip car?";
-    }
-    
-    if (prompt) {
-      const clean = prompt.trim().replace(/\?+$/, "");
-      return `${clean}?`;
-    }
-    return "What is your primary childhood family pet name or native hometown?";
+  const prompt =
+    typeof anchorOrPrompt === "string" ? anchorOrPrompt : anchorOrPrompt?.prompt || "";
+  if (prompt) {
+    const clean = prompt.trim().replace(/\?*$/, "");
+    return `${clean}?`;
   }
+  return "What was the secret answer you set for this security question?";
 }
 
-/**
- * 2. LLM-as-a-Judge Semantic Evaluator
- * Verifies user cognitive intent, tolerates casual phrasing, typos, and articles.
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. High-Precision & Friendly Semantic Evaluator
+// ─────────────────────────────────────────────────────────────────────────────
 export interface JudgeResult {
   is_verified: boolean;
   confidence: number;
@@ -167,100 +94,201 @@ export async function evaluateSemanticAnswer(
   submittedAnswer: string
 ): Promise<JudgeResult> {
   const trimmed = submittedAnswer.trim();
-  if (!trimmed) {
-    return {
-      is_verified: false,
-      confidence: 0.0,
-      reasoning: "No answer submitted or timer expired",
-    };
+  if (!trimmed || trimmed.length < 1) {
+    return { is_verified: false, confidence: 0.0, reasoning: "No answer submitted" };
   }
 
-  const systemInstruction = `You are PayShield's LLM-as-a-Judge Cognitive Verification Engine.
-Your task is to strictly evaluate whether the user's submitted answer matches or semantically answers the expected secret memory anchor.
-STRICT VERIFICATION RULES:
-1. APPROVE if the submitted answer matches the expected secret, shares key core memory elements (e.g. "fries with milkshake", "shake and fries", "fries in shake" for "Fries dipped in chocolate milkshake"), or is an obvious synonym/casual wording.
-2. REJECT if the submitted answer is generic, unrelated, incorrect, or contradicts the expected secret (e.g. submitting "cake", "pizza", "water", "apple", "random", "cat" when the secret is "Fries dipped in chocolate milkshake" MUST BE REJECTED with is_verified: false and confidence: 0.05).
-3. Tolerate minor phonetic typos, capitalization, and trivial articles ("the", "my", "a").
-OUTPUT:
-Return ONLY a valid JSON object:
+  // ── Step 1: High-precision deterministic check first (Instant & Resilient) ──
+  const deterministicResult = evaluateDeterministicMatch(expectedSecret, trimmed);
+  if (deterministicResult.is_verified) {
+    return deterministicResult;
+  }
+
+  // ── Step 2: Gemini LLM evaluation (Tolerates complex natural phrasing) ─────
+  const systemInstruction = `You are PayShield's Cognitive Verification Judge.
+Your task is to verify whether the user's answer matches their private STORED SECRET.
+
+CRITICAL RULES:
+1. Stored Secret is the ground truth: "${expectedSecret}".
+2. APPROVE (is_verified: true, confidence: 0.95) if the user provides the core secret concept, name, place, number, or item (e.g., if secret is "Bruno who loved biscuits", "Bruno" or "My dog Bruno" MUST be approved).
+3. APPROVE natural conversational responses and minor spelling typos (e.g. "Brunno", "Zurich", "Rhapsody").
+4. REJECT (is_verified: false, confidence: 0.05) if the answer is a DIFFERENT name, place, or concept (e.g., if secret is "Bruno", answering "Charlie" or "Max" MUST be rejected).
+5. REJECT generic filler words or guesses (e.g., "dog", "yes", "idk", "pet", "password").
+
+OUTPUT FORMAT: Return ONLY valid JSON:
 {
   "is_verified": boolean,
   "confidence": number between 0.0 and 1.0,
-  "reasoning": "brief explanation"
+  "reasoning": "short explanation"
 }`;
 
-  const prompt = `Expected Secret: "${expectedSecret}"
-Challenge Riddle: "${riddle}"
-User's Submitted Answer: "${trimmed}"`;
+  const prompt = `Stored Secret: "${expectedSecret}"
+Question Asked: "${riddle}"
+User's Answer: "${trimmed}"`;
 
   try {
     const raw = await callGeminiApi(prompt, systemInstruction);
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+      const conf =
+        typeof parsed.confidence === "number" ? parsed.confidence : parsed.is_verified ? 0.92 : 0.05;
       return {
         is_verified: Boolean(parsed.is_verified),
-        confidence: typeof parsed.confidence === "number" ? parsed.confidence : (parsed.is_verified ? 0.95 : 0.05),
-        reasoning: parsed.reasoning || "Evaluated by Gemini 3.5 Flash-Lite",
-        is_borderline: parsed.confidence >= 0.50 && parsed.confidence < 0.75,
+        confidence: conf,
+        reasoning: parsed.reasoning || "Evaluated by Google Gemini",
+        is_borderline: conf >= 0.50 && conf < 0.70,
       };
     }
   } catch (err: any) {
-    console.warn("[Gemini Circuit Breaker] Evaluator fallback triggered:", err.message);
+    console.warn("[Gemini Evaluator Notice] AI service unavailable, using deterministic match result:", err.message);
   }
 
-  // Deterministic Circuit Breaker Semantic String Matcher
-  return evaluateDeterministicMatch(expectedSecret, trimmed, riddle);
+  return deterministicResult;
 }
 
-const STOP_WORDS = new Set(["the", "a", "an", "my", "our", "their", "who", "whom", "that", "which", "and", "or", "in", "at", "for", "with", "loved", "liked", "dog", "pet", "is", "was", "to", "of", "dipped"]);
+// ── Stop words & Generic Category Words ───────────────────────────────────────
+const STOP_WORDS = new Set([
+  "the", "a", "an", "my", "our", "their", "his", "her", "its", "your",
+  "who", "whom", "that", "which", "and", "or", "in", "at", "for", "with",
+  "is", "was", "were", "to", "of", "on", "by", "it", "as", "be", "been",
+  "i", "me", "we", "us", "you", "he", "she", "they", "them",
+  "loved", "liked", "went", "think", "remember", "it was", "was called",
+]);
 
-function evaluateDeterministicMatch(expected: string, submitted: string, riddle?: string): JudgeResult {
-  const normSub = submitted.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
-  if (!normSub || normSub.length < 2) {
-    return {
-      is_verified: false,
-      confidence: 0.04,
-      reasoning: "Answer is too short or empty",
-    };
+const GENERIC_CATEGORY_WORDS = new Set([
+  "dog", "cat", "pet", "animal", "city", "place", "town", "hometown",
+  "food", "snack", "meal", "name", "street", "road", "avenue", "house",
+  "car", "vehicle", "color", "number", "digits", "code", "song", "music",
+  "item", "thing", "teacher", "school", "first", "old", "secret", "answer",
+]);
+
+/**
+ * Levenshtein distance typo tolerance.
+ */
+function isFuzzyWordMatch(submittedWord: string, targetWord: string): boolean {
+  if (submittedWord === targetWord) return true;
+  const sLen = submittedWord.length;
+  const tLen = targetWord.length;
+  if (Math.abs(sLen - tLen) > 2) return false;
+  if (sLen < 4 || tLen < 4) return false; // Too short for typos
+
+  const maxAllowedDist = sLen <= 5 ? 1 : 2;
+
+  const dp: number[][] = Array.from({ length: sLen + 1 }, (_, i) =>
+    Array.from({ length: tLen + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+  );
+
+  for (let i = 1; i <= sLen; i++) {
+    for (let j = 1; j <= tLen; j++) {
+      dp[i][j] =
+        submittedWord[i - 1] === targetWord[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
   }
 
-  // Support multiple expected secrets separated by |
-  const expectedOptions = expected.split("|").map((s) => s.trim()).filter(Boolean);
+  return dp[sLen][tLen] <= maxAllowedDist;
+}
+
+function extractTokens(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 0);
+}
+
+/**
+ * High-accuracy deterministic matcher:
+ * - Friendly: Accepts exact answer, key memory nouns, numbers, and minor typos.
+ * - Secure: Blocks generic words ("pet", "dog"), partial word substrings ("rich"), and noise.
+ */
+export function evaluateDeterministicMatch(expected: string, submitted: string): JudgeResult {
+  const cleanSub = submitted.trim().toLowerCase();
+  const normSub = cleanSub.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+  if (!normSub || normSub.length < 1) {
+    return { is_verified: false, confidence: 0.0, reasoning: "Answer is empty" };
+  }
+
+  // Reject noise words
+  const NOISE = new Set(["yes", "no", "ok", "idk", "hi", "hey", "maybe", "sure", "nope", "test", "pass", "password"]);
+  if (NOISE.has(normSub)) {
+    return { is_verified: false, confidence: 0.02, reasoning: "Generic noise answer rejected" };
+  }
+
+  // Split expected options if pipe-delimited
+  const expectedOptions = expected
+    .split("|")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   for (const opt of expectedOptions) {
-    const normExp = opt.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+    const normExp = opt.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+    if (!normExp) continue;
 
-    // Exact or direct substring match
-    if (normExp === normSub || normSub.includes(normExp) || (normSub.length >= 3 && normExp.includes(normSub))) {
+    // Rule 1: Exact string match (ignoring punctuation/case)
+    if (normExp === normSub) {
       return {
         is_verified: true,
-        confidence: 0.98,
-        reasoning: "Cognitive intent verified: High semantic overlap with stored secret memory",
+        confidence: 0.99,
+        reasoning: "Exact match with stored memory answer",
       };
     }
 
-    // Content token filtering
-    const expTokens = normExp.split(/\s+/).filter((t) => t.length > 2 && !STOP_WORDS.has(t));
-    const subTokens = normSub.split(/\s+/).filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+    const subTokens = extractTokens(normSub);
+    const expTokens = extractTokens(normExp);
 
-    // Check exact token overlap
-    const shared = subTokens.filter((t) => expTokens.includes(t));
-    if (shared.length > 0) {
-      return {
-        is_verified: true,
-        confidence: 0.95,
-        reasoning: `Cognitive intent verified: User recalled key cognitive anchor (${shared.join(", ")})`,
-      };
+    if (expTokens.length === 0 || subTokens.length === 0) continue;
+
+    // Distinctive tokens = tokens that are NOT stop words and NOT generic category names
+    const expDistinctive = expTokens.filter((t) => !STOP_WORDS.has(t) && !GENERIC_CATEGORY_WORDS.has(t));
+    // If all tokens happened to be generic (rare), fallback to non-stop words
+    const keyExpectedTokens = expDistinctive.length > 0 ? expDistinctive : expTokens.filter((t) => !STOP_WORDS.has(t));
+
+    // Rule 2: Numeric token exact match (e.g. "742")
+    const expectedNumbers = expTokens.filter((t) => /^\d+$/.test(t));
+    if (expectedNumbers.length > 0) {
+      const subNumbers = subTokens.filter((t) => /^\d+$/.test(t));
+      const numbersMatch = expectedNumbers.every((n) => subNumbers.includes(n));
+      if (numbersMatch && subNumbers.length > 0) {
+        return {
+          is_verified: true,
+          confidence: 0.98,
+          reasoning: "Verified: Correct memory number code matched",
+        };
+      }
     }
 
-    // Check stemming / substring on key tokens (e.g. "shake" matches "milkshake", "fry" matches "fries")
-    const partialMatch = subTokens.some((st) => expTokens.some((et) => et.includes(st) || st.includes(et)));
-    if (partialMatch) {
+    // Rule 3: Submitted contains ANY distinctive key word from the expected secret
+    // (e.g. user says "Bruno" for "Bruno who loved biscuits", or "Zurich" for "Zurich ski slope")
+    const matchedDistinctive = keyExpectedTokens.filter((kt) =>
+      subTokens.some((st) => st === kt || isFuzzyWordMatch(st, kt))
+    );
+
+    if (matchedDistinctive.length > 0) {
+      // Make sure the submitted answer isn't solely a generic category word
+      const subNonGeneric = subTokens.filter((t) => !STOP_WORDS.has(t) && !GENERIC_CATEGORY_WORDS.has(t));
+      if (subNonGeneric.length > 0 || matchedDistinctive.length >= keyExpectedTokens.length) {
+        return {
+          is_verified: true,
+          confidence: 0.95,
+          reasoning: `Verified: User successfully recalled key cognitive anchor (${matchedDistinctive.join(", ")})`,
+        };
+      }
+    }
+
+    // Rule 4: High token overlap (> 60% of all content tokens match)
+    const contentExpTokens = expTokens.filter((t) => !STOP_WORDS.has(t));
+    const matchedContent = contentExpTokens.filter((et) =>
+      subTokens.some((st) => st === et || isFuzzyWordMatch(st, et))
+    );
+    if (contentExpTokens.length > 0 && matchedContent.length / contentExpTokens.length >= 0.6) {
       return {
         is_verified: true,
-        confidence: 0.92,
-        reasoning: "Cognitive intent verified: Partial stem match on stored cognitive anchor",
+        confidence: 0.90,
+        reasoning: "Verified: High semantic token match with stored memory answer",
       };
     }
   }
@@ -269,6 +297,6 @@ function evaluateDeterministicMatch(expected: string, submitted: string, riddle?
   return {
     is_verified: false,
     confidence: 0.04,
-    reasoning: "Answer does not match your registered private cognitive memory anchor",
+    reasoning: "Answer does not match stored memory anchor",
   };
 }

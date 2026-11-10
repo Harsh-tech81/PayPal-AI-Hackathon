@@ -24,7 +24,7 @@ import {
 import {
   INTENT_CATEGORIES,
   DEFAULT_PRESET_PROMPTS,
-  MIN_QUESTIONS_PER_CATEGORY,
+  MIN_QUESTIONS_TOTAL,
   MAX_WORDS_PER_ANSWER,
   countWords,
   createInitialBlankAnchors,
@@ -54,6 +54,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
   // Sealing & Submitting states
   const [isSealing, setIsSealing] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const [encryptionStatus, setEncryptionStatus] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -113,11 +114,11 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
           isCustom: a.isCustom ?? (typeof a.id === "string" ? a.id.startsWith("custom_") : false),
         }));
 
-        // Ensure each section has at least MIN_QUESTIONS_PER_CATEGORY (4)
+        // Ensure preset options exist so user can choose or add questions
         const finalAnchors = [...fetchedAnchors];
         categoryOrder.forEach((cat) => {
           const count = finalAnchors.filter((a) => a.category === cat).length;
-          if (count < MIN_QUESTIONS_PER_CATEGORY) {
+          if (count < 3) {
             const presetsForCat = DEFAULT_PRESET_PROMPTS.filter((p) => p.category === cat);
             for (const preset of presetsForCat) {
               const alreadyExists = finalAnchors.some(
@@ -132,7 +133,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
                   hint: preset.hint,
                   isCustom: false,
                 });
-                if (finalAnchors.filter((a) => a.category === cat).length >= MIN_QUESTIONS_PER_CATEGORY) {
+                if (finalAnchors.filter((a) => a.category === cat).length >= 3) {
                   break;
                 }
               }
@@ -177,8 +178,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
   const removeAnchor = (id: string, cat: IntentCategory) => {
     const remainingInCat = getCategoryAnchors(cat);
-    if (remainingInCat.length <= MIN_QUESTIONS_PER_CATEGORY) {
-      alert(`Each section requires at least ${MIN_QUESTIONS_PER_CATEGORY} questions.`);
+    if (remainingInCat.length <= 1) {
       return;
     }
     setAnchors((prev) => {
@@ -245,33 +245,68 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
     });
   };
 
+  // Direct Payment Mode Handler (0 questions or reset vault)
+  const handleSkipToDirectPayments = async () => {
+    setIsClearing(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      await api.clearIntentVault();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        // Mark intent completed so user is not prompted again during transfers
+        localStorage.setItem("payshield_intent_completed", "true");
+      }
+      setIsVaultConfigured(false);
+      setConfiguredAnchors([]);
+      setIsEditingMode(false);
+      setSuccessMessage("Direct Payment Mode enabled! Transactions will proceed with automatic approval.");
+
+      setTimeout(() => {
+        if (onCompleted) {
+          onCompleted();
+        } else if (typeof window !== "undefined") {
+          window.location.href = "/dashboard";
+        }
+      }, 1200);
+    } catch (err: any) {
+      console.warn("Direct payment mode notice:", err);
+      // Fallback: clear local storage anyway
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        localStorage.setItem("payshield_intent_completed", "true");
+      }
+      setIsVaultConfigured(false);
+      setConfiguredAnchors([]);
+      setIsEditingMode(false);
+      setSuccessMessage("Direct Payment Mode enabled! Transactions will proceed with automatic approval.");
+      setTimeout(() => {
+        if (onCompleted) onCompleted();
+      }, 1000);
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
   // Final Sealing Handler via Web Crypto AES-256-GCM
   const handleSealAndSubmit = async () => {
     setIsSealing(true);
     setErrorMessage(null);
     setSuccessMessage(null);
-    setEncryptionStatus("Initializing Web Crypto Subsystem (AES-256-GCM)...");
 
     try {
-      // Filter filled anchors
-      const active = anchors.filter((a) => a.answer.trim().length > 0);
-      const memCount = active.filter((a) => a.category === "memory_anchors").length;
-      const habCount = active.filter((a) => a.category === "secret_habits").length;
-      const patCount = active.filter((a) => a.category === "pattern_sequences").length;
+      // Filter filled anchors — user can fill 1, 2, 3 or more boxes as they choose
+      const active = anchors.filter((a) => a.answer && a.answer.trim().length > 0);
 
-      if (
-        memCount < MIN_QUESTIONS_PER_CATEGORY ||
-        habCount < MIN_QUESTIONS_PER_CATEGORY ||
-        patCount < MIN_QUESTIONS_PER_CATEGORY
-      ) {
+      // If user filled 0 questions, activate Direct Payment Mode directly
+      if (active.length === 0) {
         setIsSealing(false);
-        setErrorMessage(
-          `Validation Failed: Minimum ${MIN_QUESTIONS_PER_CATEGORY} valid answers required in each category (Currently: ${memCount} Memory, ${habCount} Habits, ${patCount} Patterns).`
-        );
+        await handleSkipToDirectPayments();
         return;
       }
 
-      setEncryptionStatus(`Encrypting ${active.length} security questions with Web Crypto...`);
+      setEncryptionStatus("Initializing Web Crypto Subsystem (AES-256-GCM)...");
+      setEncryptionStatus(`Encrypting ${active.length} cognitive memory anchor${active.length === 1 ? "" : "s"} with Web Crypto...`);
 
       // Run genuine client-side AES-256-GCM encryption in browser
       const encryptedPayloads = await Promise.all(
@@ -436,23 +471,40 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
         {/* Action Controls */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <button
-            type="button"
-            disabled={isFetchingPrevious}
-            onClick={handleStartEditing}
-            className="w-full sm:w-auto py-3.5 px-6 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            {isFetchingPrevious ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#0070ba]" />
-            ) : (
-              <Edit3 className="w-3.5 h-3.5 text-[#0070ba]" />
-            )}
-            <span>
-              {isFetchingPrevious
-                ? "Fetching Saved Memories..."
-                : "Reconfigure / Update Vault Memories"}
-            </span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            <button
+              type="button"
+              disabled={isFetchingPrevious || isClearing}
+              onClick={handleStartEditing}
+              className="w-full sm:w-auto py-3.5 px-5 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {isFetchingPrevious ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#0070ba]" />
+              ) : (
+                <Edit3 className="w-3.5 h-3.5 text-[#0070ba]" />
+              )}
+              <span>
+                {isFetchingPrevious
+                  ? "Fetching Saved Memories..."
+                  : "Reconfigure Memories"}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isFetchingPrevious || isClearing}
+              onClick={handleSkipToDirectPayments}
+              className="w-full sm:w-auto py-3.5 px-5 rounded-full font-bold text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition flex items-center justify-center gap-2 disabled:opacity-60"
+              title="Remove all questions and switch to Direct Payments"
+            >
+              {isClearing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-600" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              )}
+              <span>Reset Vault &amp; Direct Pay</span>
+            </button>
+          </div>
 
           <Link
             href="/dashboard"
@@ -480,7 +532,12 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
   const currentCategoryAnchors = currentCategory ? getCategoryAnchors(currentCategory) : [];
   const currentCategoryValidCount = currentCategory ? getValidFilledCount(currentCategory) : 0;
-  const isCurrentCategorySatisfied = currentCategoryValidCount >= MIN_QUESTIONS_PER_CATEGORY;
+  const totalFilledCount = anchors.filter((a) => {
+    const words = countWords(a.answer);
+    return words >= 1 && words <= MAX_WORDS_PER_ANSWER;
+  }).length;
+  // Flexible: User can fill 1, 2, 3 or more boxes as they choose, never blocked from moving forward
+  const isCurrentCategorySatisfied = true;
 
   return (
     <div className="w-full max-w-3xl mx-auto bg-white/95 border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-luxury backdrop-blur-xl text-slate-900 animate-fade-in">
@@ -585,8 +642,8 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-slate-600">
-                    <span>Minimum Required:</span>
-                    <span className="font-mono text-[#0070ba]">4 Anchors</span>
+                    <span>Questions:</span>
+                    <span className="font-mono text-[#0070ba]">Fill 1, 2, 3 or more</span>
                   </div>
                 </div>
               );
@@ -611,10 +668,24 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
             </button>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={isClearing}
+              onClick={handleSkipToDirectPayments}
+              className="w-full sm:w-auto py-3 px-6 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center gap-2 transition"
+            >
+              {isClearing ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              )}
+              <span>Skip Questions &amp; Enable Direct Payments</span>
+            </button>
+
             <button
               onClick={() => setCurrentStep(2)}
-              className="py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white flex items-center gap-2 shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all"
+              className="w-full sm:w-auto py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white flex items-center justify-center gap-2 shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
               <span>Begin Section 1: Memory Anchors</span>
               <ArrowRight className="w-4 h-4" />
@@ -640,25 +711,38 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
               <p className="text-xs text-slate-500 mt-0.5">{currentCategoryMeta.subtitle}</p>
             </div>
 
-            {/* Requirement Counter Badge */}
-            <div
-              className={`px-4 py-2 rounded-2xl border text-xs font-bold flex items-center gap-2 self-start sm:self-auto ${
-                isCurrentCategorySatisfied
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm"
-                  : "bg-slate-50 border-slate-200 text-slate-700"
-              }`}
-            >
-              {isCurrentCategorySatisfied ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              ) : (
-                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+            {/* Answer Counter Badge & Fast Jump */}
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              <div
+                className={`px-3.5 py-1.5 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
+                  currentCategoryValidCount > 0
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-800 shadow-sm"
+                    : "bg-slate-50 border-slate-200 text-slate-600"
+                }`}
+              >
+                {currentCategoryValidCount > 0 ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <Sparkles className="w-4 h-4 text-slate-400 shrink-0" />
+                )}
+                <span>
+                  Filled in this section:{" "}
+                  <strong className="font-mono text-sm">{currentCategoryValidCount}</strong>
+                  <span className="text-[11px] font-normal text-slate-500 ml-1">(Optional)</span>
+                </span>
+              </div>
+
+              {totalFilledCount >= 1 && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(5)}
+                  className="px-3.5 py-1.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-[#0070ba] border border-blue-200/80 font-bold text-xs transition flex items-center gap-1.5 shadow-sm"
+                  title="Jump to seal vault with the answers you've filled"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Done? Seal Vault ({totalFilledCount} Answer{totalFilledCount === 1 ? "" : "s"})</span>
+                </button>
               )}
-              <span>
-                Valid Answers:{" "}
-                <strong className="font-mono text-sm">
-                  {currentCategoryValidCount} / {MIN_QUESTIONS_PER_CATEGORY}
-                </strong>
-              </span>
             </div>
           </div>
 
@@ -753,7 +837,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
                       </h4>
                     </div>
 
-                    {currentCategoryAnchors.length > MIN_QUESTIONS_PER_CATEGORY && (
+                    {currentCategoryAnchors.length > 1 && (
                       <button
                         type="button"
                         onClick={() => currentCategory && removeAnchor(item.id, currentCategory)}
@@ -819,12 +903,12 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
           </div>
 
           {/* Category Navigation Controls */}
-          <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-slate-100">
             {isVaultConfigured && isEditingMode && currentStep === 2 ? (
               <button
                 type="button"
                 onClick={() => setIsEditingMode(false)}
-                className="py-3 px-6 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-2 transition"
+                className="w-full sm:w-auto py-3 px-6 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center gap-2 transition"
               >
                 <ArrowLeft className="w-4 h-4" /> Cancel &amp; Return to Vault
               </button>
@@ -832,24 +916,48 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
               <button
                 type="button"
                 onClick={() => setCurrentStep((prev) => prev - 1)}
-                className="py-3 px-6 rounded-full font-bold text-sm text-slate-600 hover:text-slate-900 flex items-center gap-2 transition"
+                className="w-full sm:w-auto py-3 px-6 rounded-full font-bold text-sm text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition"
               >
                 <ArrowLeft className="w-4 h-4" /> Previous
               </button>
             )}
 
-            <button
-              onClick={() => setCurrentStep((prev) => prev + 1)}
-              disabled={!isCurrentCategorySatisfied}
-              className="py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white flex items-center gap-2 shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <span>
-                {currentStep === 4
-                  ? "Review & Seal Vault"
-                  : `Continue to Step ${currentStep + 1}`}
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex flex-wrap items-center justify-end gap-3 w-full sm:w-auto">
+              {totalFilledCount === 0 && (
+                <button
+                  type="button"
+                  disabled={isClearing}
+                  onClick={handleSkipToDirectPayments}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 underline decoration-slate-300 hover:decoration-slate-600 transition py-2 px-3"
+                >
+                  Skip to Direct Payments
+                </button>
+              )}
+
+              {totalFilledCount >= 1 && currentStep < 4 && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(5)}
+                  className="py-3 px-5 rounded-full font-bold text-xs bg-blue-50 hover:bg-blue-100 text-[#0070ba] border border-blue-200 transition flex items-center gap-1.5 shadow-sm"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Done? Seal Vault ({totalFilledCount})</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setCurrentStep((prev) => prev + 1)}
+                className="w-full sm:w-auto py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white flex items-center justify-center gap-2 shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all"
+              >
+                <span>
+                  {currentStep === 4
+                    ? "Review & Seal Vault"
+                    : `Continue to Step ${currentStep + 1}`}
+                </span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -896,16 +1004,33 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
               })}
 
               <div className="flex justify-between items-center pt-1 font-bold text-slate-900">
-                <span>Total Questions Configured:</span>
-                <span className="font-mono text-[#0070ba]">
-                  {getValidFilledCount("memory_anchors") +
-                    getValidFilledCount("secret_habits") +
-                    getValidFilledCount("pattern_sequences")}{" "}
-                  Questions
+                <span>Total Active Memory Anchors:</span>
+                <span className="font-mono text-[#0070ba] text-sm">
+                  {totalFilledCount} {totalFilledCount === 1 ? "Anchor" : "Anchors"}
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Direct Payment Mode vs Sealed Anchors Info Box */}
+          {totalFilledCount === 0 ? (
+            <div className="max-w-md mx-auto p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 text-left space-y-2 animate-fade-in shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#0070ba]">
+                <Sparkles className="w-4 h-4 text-[#0070ba] shrink-0" />
+                <span>Direct Payment Mode (0 Questions Configured)</span>
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed">
+                You haven&apos;t entered any memory questions. In <strong>Direct Payment Mode</strong>, all transfers proceed with automatic approval without security question challenges. You can configure personal questions anytime later from Security Settings.
+              </p>
+            </div>
+          ) : (
+            <div className="max-w-md mx-auto p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-left flex items-center gap-2.5 text-xs font-bold text-emerald-800 animate-fade-in">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                {totalFilledCount} Active Memory {totalFilledCount === 1 ? "Question" : "Questions"} ready for Zero-Knowledge Web Crypto sealing.
+              </span>
+            </div>
+          )}
 
           {/* Real Encryption / Sealing Status */}
           {isSealing && encryptionStatus && (
@@ -932,33 +1057,67 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 pt-4">
             <button
               onClick={() => setCurrentStep(4)}
-              disabled={isSealing}
-              className="py-3 px-6 rounded-full font-bold text-sm text-slate-600 hover:text-slate-900 flex items-center gap-2 transition disabled:opacity-40"
+              disabled={isSealing || isClearing}
+              className="w-full sm:w-auto py-3 px-6 rounded-full font-bold text-sm text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition disabled:opacity-40"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Edit
             </button>
 
-            <button
-              onClick={handleSealAndSubmit}
-              disabled={isSealing}
-              className="py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] flex items-center gap-2 transition-all disabled:opacity-50"
-            >
-              {isSealing ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-sky-400" />
-                  <span>Encrypting &amp; Sealing Vault...</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4 text-sky-400" />
-                  <span>Seal &amp; Activate Intent Vault</span>
-                </>
-              )}
-            </button>
+            {totalFilledCount === 0 ? (
+              <button
+                type="button"
+                onClick={handleSkipToDirectPayments}
+                disabled={isClearing}
+                className="w-full sm:w-auto py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                {isClearing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Activating Direct Payment Mode...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>Proceed in Direct Payment Mode</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleSealAndSubmit}
+                disabled={isSealing || isClearing}
+                className="w-full sm:w-auto py-3.5 px-8 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                {isSealing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-sky-400" />
+                    <span>Encrypting &amp; Sealing Vault...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-sky-400" />
+                    <span>Seal &amp; Activate Intent Vault ({totalFilledCount})</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
+
+          {totalFilledCount > 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                disabled={isClearing || isSealing}
+                onClick={handleSkipToDirectPayments}
+                className="text-[11px] font-bold text-slate-400 hover:text-slate-600 underline decoration-slate-300 transition"
+              >
+                Clear all answers and switch to Direct Payment Mode
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

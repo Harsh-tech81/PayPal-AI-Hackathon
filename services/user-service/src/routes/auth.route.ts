@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { userRepository } from "../repositories/user.repository.js";
 import { hashPassword, verifyPassword, signToken, RegisterUserSchema, LoginUserSchema, sendUnifiedEmail } from "@payshield/shared";
+import prisma from "../../../../database/prisma-client.js";
 import twilio from "twilio";
 
 // In-Memory OTP Store: email -> { otp, expiresAt, phone, hasTwilioVerify, trialTemplateUsed }
@@ -412,11 +413,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (!user && credentialId) {
         try {
           const device = await prisma.device.findFirst({
-            where: { credentialId },
-            include: { user: true },
+            where: { deviceFingerprint: credentialId },
           });
-          if (device?.user) {
-            user = device.user;
+          if (device?.userId) {
+            user = await userRepository.findById(device.userId);
           }
         } catch {}
       }

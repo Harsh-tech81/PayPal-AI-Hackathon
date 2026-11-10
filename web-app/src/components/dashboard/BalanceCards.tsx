@@ -49,7 +49,7 @@ export function BalanceCards() {
           })
           .catch(() => null);
         if (vRes && typeof vRes.anchorsCount === "number") {
-          setAnchorCount(vRes.anchorsCount > 0 ? vRes.anchorsCount : 10);
+          setAnchorCount(vRes.anchorsCount);
         }
       }
     } catch (err) {
@@ -134,16 +134,18 @@ export function BalanceCards() {
 
           <div className="text-2xl font-black text-slate-950 tracking-tight flex items-baseline gap-2">
             <span>{anchorCount}</span>
-            <span className="text-sm font-bold text-slate-500">Anchors Configured</span>
+            <span className="text-sm font-bold text-slate-500">
+              {anchorCount === 0 ? "Anchors (Direct Mode)" : "Anchors Armed"}
+            </span>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 font-medium">
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-700 font-bold">
             <span className="flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-emerald-600" />
-              AES-256 Encrypted
+              <Lock className={`w-3.5 h-3.5 ${anchorCount > 0 ? "text-emerald-600" : "text-sky-600"}`} />
+              {anchorCount === 0 ? "Direct Payments Active" : "AES-256-GCM Vault Armed"}
             </span>
-            <span className="text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
-              READY
+            <span className="text-[10px] font-mono bg-blue-50 text-[#0070ba] border border-blue-200 px-2 py-0.5 rounded-full">
+              {anchorCount === 0 ? "DIRECT" : "READY"}
             </span>
           </div>
         </div>

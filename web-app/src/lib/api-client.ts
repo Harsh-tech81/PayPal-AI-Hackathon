@@ -96,6 +96,17 @@ export const api = {
     return safeJson(res);
   },
 
+  async clearIntentVault(overrideUserId?: string) {
+    const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
+    const finalUserId = overrideUserId || storedUserId || "a0000000-0000-0000-0000-000000000001";
+    const res = await fetch(`${USER_SERVICE}/api/v1/intent-form/clear`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ userId: finalUserId }),
+    });
+    return safeJson(res);
+  },
+
   async getVaultStatus(userId?: string) {
     const storedUserId = typeof window !== "undefined" ? localStorage.getItem("payshield_user_id") : null;
     const finalUserId = userId || storedUserId || "a0000000-0000-0000-0000-000000000001";

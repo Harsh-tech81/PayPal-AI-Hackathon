@@ -51,6 +51,19 @@ export function useVerification() {
         });
 
         setResult(res);
+
+        // ── Handle safe error: session expired, vault not found ──────────────
+        // Don't freeze the account — just surface the error and let user retry.
+        if (res?.status === "VERIFICATION_ERROR") {
+          return {
+            status: "VERIFICATION_ERROR",
+            is_verified: false,
+            sessionExpired: true,
+            reasoning: res.reasoning || "Security session expired. Please retry the payment.",
+          };
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         return res;
       } catch (err: any) {
         const failRes = {

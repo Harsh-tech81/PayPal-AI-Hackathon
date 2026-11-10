@@ -79,4 +79,22 @@ export const intentRepository = {
 
     return memoryVault.get(safeUserId) || null;
   },
+
+  async clearIntentSecrets(userId: string): Promise<boolean> {
+    const safeUserId = String(userId);
+    memoryVault.delete(safeUserId);
+
+    try {
+      const client = await getConnectedMongoClient();
+      if (client) {
+        const db = client.db();
+        await db.collection("intent_forms").deleteOne({ userId: safeUserId });
+        return true;
+      }
+    } catch (err: any) {
+      console.warn(`[Intent Vault MongoDB Notice] ${err.message}. Cleared from memory vault.`);
+    }
+
+    return true;
+  },
 };
