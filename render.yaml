@@ -1,0 +1,78 @@
+# ==============================================================================
+# PayShield AI - Render Deployment Blueprint
+# Docs: https://render.com/docs/blueprint-spec
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. PayShield Unified Backend Gateway (Recommended - Free Tier & Low Latency)
+  # Runs all 6 Fastify microservices + Reverse Proxy on a single Render instance
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: payshield-backend-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npx prisma generate --schema=database/prisma/schema.prisma
+    startCommand: npm run start:production
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      # Supabase PostgreSQL
+      - key: DATABASE_URL
+        sync: false # Set in Render Dashboard
+      - key: DIRECT_URL
+        sync: false # Set in Render Dashboard
+      # MongoDB Atlas
+      - key: MONGODB_URI
+        sync: false # Set in Render Dashboard
+      # Redis Connection (Internal Render Redis or Upstash)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: payshield-redis
+          property: connectionString
+      # AI & Credentials
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AES_MASTER_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: EMAIL_SERVICE
+        value: gmail
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "465"
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+
+  # ----------------------------------------------------------------------------
+  # 2. Redis Cache (For 10-second Challenge Countdown & Session TTLs)
+  # ----------------------------------------------------------------------------
+  - type: redis
+    name: payshield-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: [] # internal only
