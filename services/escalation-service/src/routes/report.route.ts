@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { generateBankDisputeDossier } from "../actions/bank-reporter.js";
 
 export async function reportRoutes(fastify: FastifyInstance) {
-  fastify.post("/api/v1/escalate/report-to-bank", async (request: FastifyRequest, reply: FastifyReply) => {
+  const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as {
         incidentReference: string;
@@ -24,5 +24,8 @@ export async function reportRoutes(fastify: FastifyInstance) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Failed to generate bank report", message: err.message });
     }
-  });
+  };
+
+  fastify.post("/api/v1/escalate/report-to-bank", handler);
+  fastify.post("/api/v1/escalation/report-to-bank", handler);
 }

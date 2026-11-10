@@ -6,7 +6,7 @@ import { SubmitAnswerSchema } from "@payshield/shared";
 const ESCALATION_SERVICE_URL = process.env.ESCALATION_SERVICE_URL || "http://localhost:8006";
 
 export async function answerRoutes(fastify: FastifyInstance) {
-  fastify.post("/api/v1/verify/answer", async (request: FastifyRequest, reply: FastifyReply) => {
+  const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const parsed = SubmitAnswerSchema.safeParse(request.body);
       if (!parsed.success) {
@@ -195,5 +195,8 @@ export async function answerRoutes(fastify: FastifyInstance) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Verification evaluation failed", message: err.message });
     }
-  });
+  };
+
+  fastify.post("/api/v1/verify/answer", handler);
+  fastify.post("/api/v1/verification/answer", handler);
 }

@@ -3,7 +3,7 @@ import { executeAccountFreeze } from "../actions/freeze-manager.js";
 import { blockAttackerIp } from "../actions/ip-blocker.js";
 
 export async function freezeRoutes(fastify: FastifyInstance) {
-  fastify.post("/api/v1/escalate/freeze", async (request: FastifyRequest, reply: FastifyReply) => {
+  const handler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const body = request.body as {
         userId: string;
@@ -40,5 +40,8 @@ export async function freezeRoutes(fastify: FastifyInstance) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Failed to execute account freeze", message: err.message });
     }
-  });
+  };
+
+  fastify.post("/api/v1/escalate/freeze", handler);
+  fastify.post("/api/v1/escalation/freeze", handler);
 }

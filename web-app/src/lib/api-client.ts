@@ -2,11 +2,23 @@
  * Centralized API Client & Service Proxy Routing for PayShield AI Web App.
  */
 
-const USER_SERVICE = process.env.NEXT_PUBLIC_USER_SERVICE_URL || "http://localhost:8001";
-const TRANSACTION_SERVICE = process.env.NEXT_PUBLIC_TRANSACTION_SERVICE_URL || "http://localhost:8002";
-const VERIFICATION_AGENT = process.env.NEXT_PUBLIC_VERIFICATION_AGENT_URL || "http://localhost:8003";
-const ESCALATION_SERVICE = process.env.NEXT_PUBLIC_ESCALATION_SERVICE_URL || "http://localhost:8006";
-const ALERT_SERVICE = process.env.NEXT_PUBLIC_ALERT_SERVICE_URL || "http://localhost:8005";
+// Base gateway URL fallback (allows setting just 1 URL in Vercel)
+const BASE_GATEWAY_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_TRANSACTION_SERVICE_URL ||
+  "";
+
+const USER_SERVICE =
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL || BASE_GATEWAY_URL || "http://localhost:8001";
+const TRANSACTION_SERVICE =
+  process.env.NEXT_PUBLIC_TRANSACTION_SERVICE_URL || BASE_GATEWAY_URL || "http://localhost:8002";
+const VERIFICATION_AGENT =
+  process.env.NEXT_PUBLIC_VERIFICATION_AGENT_URL || BASE_GATEWAY_URL || "http://localhost:8003";
+const ESCALATION_SERVICE =
+  process.env.NEXT_PUBLIC_ESCALATION_SERVICE_URL || BASE_GATEWAY_URL || "http://localhost:8006";
+const ALERT_SERVICE =
+  process.env.NEXT_PUBLIC_ALERT_SERVICE_URL || BASE_GATEWAY_URL || "http://localhost:8005";
 
 function getAuthHeaders(): Record<string, string> {
   if (typeof window === "undefined") return { "Content-Type": "application/json" };
