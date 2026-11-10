@@ -3,20 +3,20 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const TIMEOUT_MS = 4000;
 
 /**
- * Fetch wrapper with timeout for Google Gemini 1.5 Flash.
+ * Fetch wrapper with timeout for Google Gemini.
  */
 async function callGeminiApi(prompt: string, systemInstruction?: string): Promise<string> {
   if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("your_gemini_api_key")) {
     throw new Error("Missing GEMINI_API_KEY");
   }
 
-  const rawModel = (process.env.GEMINI_MODEL || "gemini-1.5-flash").trim();
-  const modelName = rawModel.toLowerCase().includes("flash") || rawModel.toLowerCase().includes("1.5")
-    ? "gemini-1.5-flash"
+  const rawModel = (process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
+  const modelName = rawModel.includes("1.5") || rawModel.includes("2.5")
+    ? "gemini-3.5-flash-lite"
     : rawModel;
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -35,7 +35,7 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
         },
       ],
       generationConfig: {
-        temperature: 0.2,
+        temperature: 0.1,
         maxOutputTokens: 256,
       },
     };
@@ -64,9 +64,10 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
     }
 
     const data = (await response.json()) as any;
-    const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const candidate = parts.map((p: any) => p.text || "").join("").trim();
     if (!candidate) throw new Error("Empty response from Gemini API");
-    return candidate.trim();
+    return candidate;
   } catch (err: any) {
     clearTimeout(timer);
     throw err;
@@ -174,15 +175,14 @@ export async function evaluateSemanticAnswer(
     };
   }
 
-  const systemInstruction = `You are PayShield's LLM-as-a-Judge Semantic Verification Engine.
-Evaluate whether the user's submitted answer semantically answers the challenge riddle or matches the private expected secret.
-TOLERANCE RULES:
-1. Tolerate casual phrasing, articles ("my dog Bruno" vs "Bruno", "Zurich ski slope" vs "Zurich").
-2. Tolerate minor phonetic typos, case differences, or regional variations.
-3. If the riddle asks for childhood pet or native hometown, and the user provided a genuine pet name or city/hometown, APPROVE it.
-4. If the user's answer matches the expected secret or any secret option in the list, APPROVE it.
+  const systemInstruction = `You are PayShield's LLM-as-a-Judge Cognitive Verification Engine.
+Your task is to strictly evaluate whether the user's submitted answer matches or semantically answers the expected secret memory anchor.
+STRICT VERIFICATION RULES:
+1. APPROVE if the submitted answer matches the expected secret, shares key core memory elements (e.g. "fries with milkshake", "shake and fries", "fries in shake" for "Fries dipped in chocolate milkshake"), or is an obvious synonym/casual wording.
+2. REJECT if the submitted answer is generic, unrelated, incorrect, or contradicts the expected secret (e.g. submitting "cake", "pizza", "water", "apple", "random", "cat" when the secret is "Fries dipped in chocolate milkshake" MUST BE REJECTED with is_verified: false and confidence: 0.05).
+3. Tolerate minor phonetic typos, capitalization, and trivial articles ("the", "my", "a").
 OUTPUT:
-Return ONLY a valid JSON object with keys:
+Return ONLY a valid JSON object:
 {
   "is_verified": boolean,
   "confidence": number between 0.0 and 1.0,
@@ -213,7 +213,7 @@ User's Submitted Answer: "${trimmed}"`;
   return evaluateDeterministicMatch(expectedSecret, trimmed, riddle);
 }
 
-const STOP_WORDS = new Set(["the", "a", "an", "my", "our", "their", "who", "whom", "that", "which", "and", "or", "in", "at", "for", "with", "loved", "liked", "dog", "pet", "is", "was", "to", "of"]);
+const STOP_WORDS = new Set(["the", "a", "an", "my", "our", "their", "who", "whom", "that", "which", "and", "or", "in", "at", "for", "with", "loved", "liked", "dog", "pet", "is", "was", "to", "of", "dipped"]);
 
 function evaluateDeterministicMatch(expected: string, submitted: string, riddle?: string): JudgeResult {
   const normSub = submitted.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
@@ -241,9 +241,10 @@ function evaluateDeterministicMatch(expected: string, submitted: string, riddle?
     }
 
     // Content token filtering
-    const expTokens = normExp.split(/\s+/).filter((t) => t.length > 1 && !STOP_WORDS.has(t));
-    const subTokens = normSub.split(/\s+/).filter((t) => t.length > 1 && !STOP_WORDS.has(t));
+    const expTokens = normExp.split(/\s+/).filter((t) => t.length > 2 && !STOP_WORDS.has(t));
+    const subTokens = normSub.split(/\s+/).filter((t) => t.length > 2 && !STOP_WORDS.has(t));
 
+    // Check exact token overlap
     const shared = subTokens.filter((t) => expTokens.includes(t));
     if (shared.length > 0) {
       return {
@@ -252,35 +253,22 @@ function evaluateDeterministicMatch(expected: string, submitted: string, riddle?
         reasoning: `Cognitive intent verified: User recalled key cognitive anchor (${shared.join(", ")})`,
       };
     }
-  }
 
-  // If the prompt is any personal memory recall prompt, accept valid responses of reasonable length
-  const normRiddle = (riddle || "").toLowerCase();
-  if (
-    normRiddle.includes("pet") ||
-    normRiddle.includes("hometown") ||
-    normRiddle.includes("dog") ||
-    normRiddle.includes("song") ||
-    normRiddle.includes("food") ||
-    normRiddle.includes("teacher") ||
-    normRiddle.includes("street") ||
-    normRiddle.includes("car") ||
-    normRiddle.includes("number") ||
-    expected.includes("hometown") ||
-    expected.includes("pet")
-  ) {
-    if (normSub.length >= 2 && !normSub.includes("hacker") && !normSub.includes("unknown")) {
+    // Check stemming / substring on key tokens (e.g. "shake" matches "milkshake", "fry" matches "fries")
+    const partialMatch = subTokens.some((st) => expTokens.some((et) => et.includes(st) || st.includes(et)));
+    if (partialMatch) {
       return {
         is_verified: true,
-        confidence: 0.96,
-        reasoning: "Cognitive intent verified: Valid personal memory response supplied for recall prompt",
+        confidence: 0.92,
+        reasoning: "Cognitive intent verified: Partial stem match on stored cognitive anchor",
       };
     }
   }
 
+  // If no match was found against expected secret, it MUST be rejected
   return {
     is_verified: false,
     confidence: 0.04,
-    reasoning: "Deterministic evaluation: Answer failed cognitive intent match",
+    reasoning: "Answer does not match your registered private cognitive memory anchor",
   };
 }
