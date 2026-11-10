@@ -26,9 +26,6 @@ export default function IntentFormPage() {
           <div className="flex items-baseline">
             <span className="font-black text-2xl text-[#003087] tracking-tight">Pay</span>
             <span className="font-black text-2xl text-[#0070ba] tracking-tight">Pal</span>
-            <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-[#0070ba] px-2 py-0.5 rounded-full bg-blue-50/90 border border-blue-200/70 shadow-sm">
-              Shield Vault
-            </span>
           </div>
         </Link>
         <Link

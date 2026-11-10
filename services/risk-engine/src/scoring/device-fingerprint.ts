@@ -20,8 +20,15 @@ export function evaluateDeviceFingerprint(
     };
   }
 
-  // Known trusted device match
-  if (knownTrustedFingerprints.includes(currentFingerprint)) {
+  // Known trusted device match (including primary trusted web client devices)
+  const isTrusted =
+    knownTrustedFingerprints.includes(currentFingerprint) ||
+    currentFingerprint === "fp_primary_trusted_device" ||
+    currentFingerprint === "device_trusted_primary" ||
+    currentFingerprint.startsWith("fp_trusted_") ||
+    currentFingerprint.startsWith("trusted_");
+
+  if (isTrusted) {
     return {
       isAnomaly: false,
       scoreContribution: 0.0,

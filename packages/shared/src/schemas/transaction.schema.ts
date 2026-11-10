@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const CreateTransactionSchema = z.object({
-  recipientEmail: z.string().email("Valid recipient email is required"),
+  recipientEmail: z.string().min(3, "Valid recipient email or phone number is required"),
   amount: z.number().positive("Amount must be greater than 0"),
   currency: z.string().default("USD"),
   description: z.string().max(255).optional(),

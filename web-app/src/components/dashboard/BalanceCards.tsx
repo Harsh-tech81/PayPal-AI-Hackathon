@@ -95,12 +95,12 @@ export function BalanceCards() {
           </div>
         </div>
 
-        {/* PayPal Gateway Status */}
+        {/* Payment Methods */}
         <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-sm hover:shadow-luxury hover:scale-[1.01] transition-all duration-300">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Payment Gateway</span>
-              <div className="text-xs font-bold text-slate-700 mt-0.5">Sandbox Client Protocol</div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Payment Methods</span>
+              <div className="text-xs font-bold text-slate-700 mt-0.5">Primary Bank & Cards</div>
             </div>
             <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 text-[#003087] flex items-center justify-center font-serif italic font-black text-lg shadow-sm">
               PP
@@ -113,19 +113,19 @@ export function BalanceCards() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Instant Settlement Enclave</span>
+            <span>Instant Transfers</span>
             <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-              ONLINE
+              ACTIVE
             </span>
           </div>
         </div>
 
-        {/* Cognitive Shield */}
+        {/* Security Vault */}
         <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-sm hover:shadow-luxury hover:scale-[1.01] transition-all duration-300">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Defense Subsystem</span>
-              <div className="text-xs font-bold text-slate-700 mt-0.5">Zero-Knowledge Intent Vault</div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Security Vault</span>
+              <div className="text-xs font-bold text-slate-700 mt-0.5">Personal Memory Anchors</div>
             </div>
             <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
               <ShieldCheck className="w-6 h-6" />
@@ -154,29 +154,26 @@ export function BalanceCards() {
       {/* Quick Action Bar */}
       <div className="p-6 sm:p-7 rounded-3xl bg-white/90 border border-slate-200/90 shadow-luxury backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#0070ba] flex items-center gap-1.5 mb-1">
-            <Cpu className="w-3.5 h-3.5" /> Fast Protected Operations
-          </span>
-          <h4 className="text-base font-black text-slate-950">Protected Payments Terminal</h4>
+          <h4 className="text-base font-black text-slate-950">Quick Actions</h4>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time heuristic risk analysis & cognitive episodic challenge gate active on every transfer.
+            Send payments, manage your wallet, or update your security questions vault.
           </p>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <Link
             href="/dashboard/transactions"
-            className="flex-1 sm:flex-initial py-3.5 px-7 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all duration-200 group"
+            className="flex-1 sm:flex-initial py-3 px-6 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all duration-200 group"
           >
             <Send className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            <span>Send Money Securely</span>
+            <span>Send Money</span>
           </Link>
           <Link
             href="/intent-form"
-            className="flex-1 sm:flex-initial py-3.5 px-6 rounded-full font-bold text-sm bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all duration-200"
+            className="flex-1 sm:flex-initial py-3 px-6 rounded-full font-bold text-sm bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 transition-all duration-200"
           >
             <Sparkles className="w-4 h-4 text-[#0070ba]" />
-            <span>Manage Memory Vault</span>
+            <span>Security Questions</span>
           </Link>
         </div>
       </div>

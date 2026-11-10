@@ -10,7 +10,7 @@ interface ChallengeModalProps {
   challengeData: VerificationChallengeData | null;
   onClose: () => void;
   onSubmit: (answer: string, elapsedMs: number, isTimeout: boolean) => Promise<any>;
-  onSuccess?: () => void;
+  onSuccess?: (res?: any) => void;
   onFraudLockdown?: (dossier?: any) => void;
 }
 
@@ -65,7 +65,7 @@ export function ChallengeModal({
       setRetryWarning(null);
       setStatusMessage("Verified! Payment approved and funds moving.");
       setTimeout(() => {
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(res);
         onClose();
       }, 700);
     } else if (res?.status === "RETRY_ALLOWED") {
@@ -112,11 +112,10 @@ export function ChallengeModal({
 
         {/* Top Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0070ba] text-xs font-black uppercase tracking-wider mb-2.5 shadow-sm">
-            <Brain className="w-4 h-4 text-[#0070ba]" />
-            <span>PayPal Cognitive Verification</span>
+          <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0070ba] shadow-sm">
+            <ShieldCheck className="w-6 h-6 text-[#0070ba]" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Security Question</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Security Check</h2>
           <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
             Transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span> intercepted for verification. Answer your private human memory prompt below to authorize.
           </p>
@@ -194,7 +193,7 @@ export function ChallengeModal({
               className="w-full py-4 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 active:scale-[0.99] text-white shadow-md hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span>Verify & Complete Payment</span>
+              <span>Verify & Authorize Transfer</span>
             </button>
 
             <button

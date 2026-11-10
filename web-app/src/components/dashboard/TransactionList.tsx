@@ -41,11 +41,8 @@ export function TransactionList() {
     <div className="rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury p-6 sm:p-8 backdrop-blur-xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-slate-100">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0070ba] flex items-center gap-1.5 mb-1">
-            <Activity className="w-3.5 h-3.5" /> Immutable Audit Ledger
-          </span>
-          <h3 className="text-xl font-black text-slate-950 tracking-tight">Recent Transactions & Risk Telemetry</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Live audit trail with real-time heuristic risk scores and verification logs</p>
+          <h3 className="text-xl font-black text-slate-950 tracking-tight">Recent Activity</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Your latest sent and received transactions with real-time verification status.</p>
         </div>
         <button
           onClick={() => {
@@ -66,7 +63,7 @@ export function TransactionList() {
           </div>
           <h4 className="text-base font-black text-slate-900">No transactions recorded yet</h4>
           <p className="text-xs text-slate-500 mt-1 max-w-sm leading-relaxed">
-            Initiate a payment using the Send Money form to see PayShield's cognitive verification and heuristic engine in action.
+            Send money to family, friends, or trusted merchants to see activity here.
           </p>
           <Link
             href="/dashboard/transactions"

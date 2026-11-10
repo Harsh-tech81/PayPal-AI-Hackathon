@@ -8,12 +8,27 @@ import { api } from "../../../lib/api-client";
 export default function AlertsHistoryPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFrozen, setIsFrozen] = useState(false);
 
   useEffect(() => {
+    // Mark alerts as read
+    if (typeof window !== "undefined") {
+      localStorage.setItem("payshield_alerts_read_at", new Date().toISOString());
+      window.dispatchEvent(new Event("payshield_alerts_read"));
+      const frozenState = localStorage.getItem("payshield_user_frozen") === "true";
+      setIsFrozen(frozenState);
+    }
+
     async function loadAlerts() {
       try {
-        const res = await api.getAlertHistory();
-        if (res.logs) setLogs(res.logs);
+        const [alertRes, profileRes] = await Promise.all([
+          api.getAlertHistory(),
+          api.getProfile().catch(() => null),
+        ]);
+        if (alertRes?.logs) setLogs(alertRes.logs);
+        if (profileRes?.user?.isFrozen !== undefined) {
+          setIsFrozen(Boolean(profileRes.user.isFrozen));
+        }
       } catch (err) {
         console.warn("Alert fetch notice:", err);
       } finally {
@@ -27,31 +42,35 @@ export default function AlertsHistoryPage() {
     <div className="space-y-8 max-w-4xl mx-auto animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-700 text-[10px] font-black uppercase tracking-wider mb-2">
-            <Radio className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
-            Live Multi-Channel Dispatch Center
-          </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
-            Security Incident & Alert Center
+            Security Alerts
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Real-time audit log of blocked fraud attempts, multi-channel alert dispatches, and automated account freeze events.
+            Activity log of security notifications, blocked suspicious attempts, and account protection events.
           </p>
         </div>
-        <Link
-          href="/alerts/lockdown"
-          className="py-3 px-5 rounded-full font-bold text-xs bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm self-start sm:self-auto"
-        >
-          <ShieldAlert className="w-4 h-4 text-rose-600" />
-          <span>View Lockdown Screen</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+
+        {isFrozen ? (
+          <Link
+            href="/alerts/lockdown"
+            className="py-2.5 px-4 rounded-full font-bold text-xs bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm self-start sm:self-auto"
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-600 animate-pulse" />
+            <span>Active Incident: View Lockdown</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        ) : (
+          <div className="py-2.5 px-4 rounded-full font-bold text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-2 shadow-sm self-start sm:self-auto">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Account Protected • Normal</span>
+          </div>
+        )}
       </div>
 
       <div className="p-7 sm:p-9 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl space-y-6">
         <div className="flex justify-between items-center pb-4 border-b border-slate-100">
           <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[#0070ba]" /> Multi-Channel Incident Stream
+            <Bell className="w-4 h-4 text-[#0070ba]" /> Notification History
           </h3>
           <span className="text-xs font-mono font-bold text-slate-400">
             {logs.length} Total Events

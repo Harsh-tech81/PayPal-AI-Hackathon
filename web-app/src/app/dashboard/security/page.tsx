@@ -52,15 +52,11 @@ export default function SecurityPage() {
   return (
     <div className="space-y-8 max-w-4xl mx-auto animate-fade-in">
       <div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          Hardware & Cryptographic Enclave
-        </div>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight">
-          Security & Intent Vault Management
+          Security Settings
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Manage your personal cognitive memory anchors and review authenticated hardware devices.
+          Manage your personal security questions and review trusted devices.
         </p>
       </div>
 
@@ -88,7 +84,7 @@ export default function SecurityPage() {
         </div>
       )}
 
-      {/* Memory Vault Card */}
+      {/* Security Questions Vault Card */}
       <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-xl pointer-events-none" />
 
@@ -98,13 +94,13 @@ export default function SecurityPage() {
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-black text-slate-950 flex flex-wrap items-center gap-2">
-              <span>Encrypted Intent Memory Vault</span>
+              <span>Personal Security Questions</span>
               <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">
-                AES-256-GCM Sealed
+                Active & Protected
               </span>
             </h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              10 cognitive anchors active in isolated zero-knowledge document store. Protected from credential stuffing and session theft.
+              10 private security questions configured. Used to authorize sensitive payments and verify your identity.
             </p>
           </div>
         </div>
@@ -114,7 +110,7 @@ export default function SecurityPage() {
           className="py-3 px-6 rounded-full font-bold text-xs bg-slate-950 hover:bg-neutral-800 text-white shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center"
         >
           <Lock className="w-3.5 h-3.5 text-sky-400" />
-          <span>Reconfigure Secrets</span>
+          <span>Update Questions</span>
         </Link>
       </div>
 
@@ -122,9 +118,9 @@ export default function SecurityPage() {
       <div className="p-7 rounded-3xl bg-white/95 border border-slate-200/90 shadow-luxury backdrop-blur-xl space-y-6">
         <div className="flex justify-between items-center pb-4 border-b border-slate-100">
           <div>
-            <h3 className="text-lg font-black text-slate-950">Active Authenticated Devices</h3>
+            <h3 className="text-lg font-black text-slate-950">Active Trusted Devices</h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Payments from recognized hardware bypass the cognitive challenge gate in 50ms with zero customer friction.
+              Recognized devices allow fast, seamless payments without secondary security verification.
             </p>
           </div>
           <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">

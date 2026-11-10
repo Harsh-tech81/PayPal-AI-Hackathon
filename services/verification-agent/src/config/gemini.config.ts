@@ -51,9 +51,10 @@ async function callGeminiApi(prompt: string, systemInstruction?: string): Promis
     }
 
     const data = (await response.json()) as any;
-    const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const candidate = parts.map((p: any) => p.text || "").join("").trim();
     if (!candidate) throw new Error("Empty response from Gemini API");
-    return candidate.trim();
+    return candidate;
   } catch (err: any) {
     clearTimeout(timer);
     throw err;
@@ -292,6 +293,7 @@ export function evaluateDeterministicMatch(expected: string, submitted: string):
     }
   }
 
+  // If no match was found against expected secret, it MUST be rejected
   return {
     is_verified: false,
     confidence: 0.04,

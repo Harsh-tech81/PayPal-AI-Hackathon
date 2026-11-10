@@ -24,7 +24,7 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agree) {
-      setError("Please agree to the Cognitive Security Protocol");
+      setError("Please agree to the User Agreement & Terms");
       return;
     }
     if (!email) {
@@ -208,7 +208,7 @@ export function RegisterForm({ onRegisterSuccess }: { onRegisterSuccess?: () => 
               className="w-4 h-4 rounded-md border-slate-300 text-[#0070ba] focus:ring-[#0070ba] cursor-pointer"
             />
             <label htmlFor="agree" className="text-xs text-slate-600 select-none font-medium cursor-pointer">
-              I agree to the <span className="font-bold text-slate-900">Cognitive Security Protocol</span> & Zero-Knowledge Vault Terms
+              I agree to the <span className="font-bold text-slate-900">User Agreement</span> & <span className="font-bold text-slate-900">Privacy Statement</span>
             </label>
           </div>
 
