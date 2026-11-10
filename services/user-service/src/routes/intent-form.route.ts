@@ -20,6 +20,17 @@ export async function intentFormRoutes(fastify: FastifyInstance) {
       const rawUserId = (parsed.data.userId || "").trim();
       const userId = rawUserId.length > 0 ? rawUserId : "a0000000-0000-0000-0000-000000000001";
 
+      // If user submits 0 anchors (chooses direct payment mode)
+      if (secrets.length === 0) {
+        await intentRepository.clearIntentSecrets(userId);
+        await userRepository.updateIntentCleared(userId);
+        return reply.send({
+          status: "VAULT_CLEARED_DIRECT_PAYMENTS",
+          anchorsConfigured: 0,
+          message: "Memory vault cleared. Direct payment mode enabled with automatic approval.",
+        });
+      }
+
       // Prepare anchors (accepting pre-encrypted client Web Crypto ciphertexts or encrypting at rest)
       const encryptedAnchors = secrets.map((sec, index) => {
         let serializedEncrypted = "";
@@ -56,11 +67,32 @@ export async function intentFormRoutes(fastify: FastifyInstance) {
       return reply.send({
         status: "VAULT_ENCRYPTED_AND_LOCKED",
         anchorsConfigured: encryptedAnchors.length,
-        message: "10 private human memories encrypted with AES-256-GCM and stored in MongoDB vault.",
+        message: `${encryptedAnchors.length} private human memories encrypted with AES-256-GCM and stored in MongoDB vault.`,
       });
     } catch (err: any) {
       fastify.log.error(err);
       return reply.status(500).send({ error: "Failed to setup intent vault", message: err.message });
+    }
+  });
+
+  // Clear user's vault and switch to direct payment mode
+  fastify.post("/api/v1/intent-form/clear", async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const body = (request.body || {}) as { userId?: string };
+      const rawUserId = (body.userId || "").trim();
+      const userId = rawUserId.length > 0 ? rawUserId : "a0000000-0000-0000-0000-000000000001";
+
+      await intentRepository.clearIntentSecrets(userId);
+      await userRepository.updateIntentCleared(userId);
+
+      return reply.send({
+        status: "VAULT_CLEARED_DIRECT_PAYMENTS",
+        anchorsConfigured: 0,
+        message: "Memory vault cleared. Direct payment mode enabled with automatic approval.",
+      });
+    } catch (err: any) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: "Failed to clear intent vault", message: err.message });
     }
   });
 

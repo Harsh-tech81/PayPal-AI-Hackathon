@@ -33,7 +33,8 @@ export interface AnchorEntry {
   isCustom?: boolean;
 }
 
-export const MIN_QUESTIONS_PER_CATEGORY = 4;
+export const MIN_QUESTIONS_PER_CATEGORY = 0;
+export const MIN_QUESTIONS_TOTAL = 0;
 export const MAX_WORDS_PER_ANSWER = 5;
 
 export const INTENT_CATEGORIES: CategoryMeta[] = [

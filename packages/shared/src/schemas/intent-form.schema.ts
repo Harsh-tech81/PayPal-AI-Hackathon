@@ -44,7 +44,7 @@ export const IntentFormSetupSchema = z.object({
   userId: z.string().optional(),
   secrets: z
     .array(MemoryAnchorItemSchema)
-    .min(1, "Please provide at least 1 memory anchor")
+    .min(0, "Memory anchors must be an array")
     .max(30, "Maximum 30 memory anchors allowed"),
 });
 
