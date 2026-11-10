@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { ShieldCheck, Lock, CheckCircle2, X, AlertCircle, Sparkles, Brain, Cpu, ArrowRight, Loader2 } from "lucide-react";
+import { ShieldCheck, Lock, CheckCircle2, X, AlertCircle, Sparkles, Brain, Cpu, ArrowRight, Loader2, AlertTriangle } from "lucide-react";
 import { VerificationChallengeData } from "../../hooks/useVerification";
 
 interface ChallengeModalProps {
@@ -26,6 +26,7 @@ export function ChallengeModal({
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [retryWarning, setRetryWarning] = useState<string | null>(null);
 
   const startTimeRef = useRef<number>(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,7 @@ export function ChallengeModal({
     setAnswer("");
     setIsSubmitting(false);
     setStatusMessage(null);
+    setRetryWarning(null);
     startTimeRef.current = Date.now();
 
     // Autofocus input
@@ -54,17 +56,33 @@ export function ChallengeModal({
     if (isSubmitting || !answer.trim()) return;
 
     setIsSubmitting(true);
-    setStatusMessage("Google Gemini evaluating cognitive intent (< 400ms)...");
+    setStatusMessage("Verifying your answer against your private memory vault...");
 
     const elapsed = Date.now() - startTimeRef.current;
     const res = await onSubmit(answer, elapsed, false);
 
     if (res?.status === "APPROVED" || res?.is_verified) {
+      setRetryWarning(null);
       setStatusMessage("Verified! Payment approved and funds moving.");
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
       }, 700);
+    } else if (res?.status === "RETRY_ALLOWED") {
+      setIsSubmitting(false);
+      setStatusMessage(null);
+      const hintText = res.hint ? ` • Hint: "${res.hint}"` : "";
+      setRetryWarning(`Answer did not match your memory vault. 1 attempt remaining.${hintText}`);
+      setAnswer("");
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    } else if (res?.status === "VERIFICATION_ERROR" || res?.sessionExpired) {
+      // Session expired or vault not found — close modal, let user retry (no freeze)
+      setIsSubmitting(false);
+      setStatusMessage(null);
+      setRetryWarning(null);
+      onClose();
     } else {
       if (typeof window !== "undefined") {
         localStorage.setItem("payshield_user_frozen", "true");
@@ -100,7 +118,7 @@ export function ChallengeModal({
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Security Question</h2>
           <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            Anomalous transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span> intercepted. Answer your private human memory prompt below to authorize at your own pace.
+            Transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span> intercepted for verification. Answer your private human memory prompt below to authorize.
           </p>
         </div>
 
@@ -119,7 +137,7 @@ export function ChallengeModal({
         <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-100 shadow-sm relative overflow-hidden">
           <div className="text-[11px] font-black text-[#0070ba] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Episodic Memory Recall Prompt</span>
+            <span>Your Personal Memory Question</span>
           </div>
           <p className="text-base sm:text-lg font-black text-slate-950 leading-snug">
             "{challengeData.question || "What is your primary childhood family pet name or native hometown?"}"
@@ -127,29 +145,37 @@ export function ChallengeModal({
           <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
             <span>Enclave: AES-256</span>
             <span className="text-[#0070ba] flex items-center gap-1">
-              <Cpu className="w-3 h-3" /> Cognitive Security Evaluator
+              <Cpu className="w-3 h-3" /> Cognitive Security Vault
             </span>
           </div>
         </div>
+
+        {/* Retry Warning Alert */}
+        {retryWarning && (
+          <div className="mb-4 p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 flex items-start gap-2.5 shadow-sm animate-fade-in">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{retryWarning}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-              Your Secret Answer (1–3 words):
+              Your Secret Answer:
             </label>
             <input
               ref={inputRef}
               type="text"
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
-              placeholder="e.g. My dog Bruno"
+              placeholder="Type the answer you set in your memory vault..."
               disabled={isSubmitting}
               className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 placeholder-slate-400 font-bold text-base outline-none transition-all"
             />
             <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5 font-medium">
               <Sparkles className="w-3.5 h-3.5 text-[#0070ba] shrink-0" />
-              <span>Natural spelling tolerated. Evaluated semantically by Google Gemini in &lt; 400ms.</span>
+              <span>Natural phrasing & minor spelling variations accepted.</span>
             </p>
           </div>
 

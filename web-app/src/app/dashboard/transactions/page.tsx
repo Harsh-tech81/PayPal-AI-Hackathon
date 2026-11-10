@@ -83,6 +83,30 @@ export default function SendTransactionsPage() {
       return;
     }
 
+    // ── BUG FIX #1: Insufficient balance guard ──────────────────────────────
+    // Fetch the current live balance from the transaction history before sending.
+    try {
+      const histRes = await api.getTransactionHistory();
+      if (histRes && Array.isArray(histRes.transactions)) {
+        let totalSent = 0;
+        histRes.transactions.forEach((tx: any) => {
+          if (tx.status === "APPROVED" || tx.status === "AUTO_APPROVED") {
+            totalSent += Number(tx.amount) || 0;
+          }
+        });
+        const availableBalance = Math.max(0, 5000.0 - totalSent);
+        if (parsedAmount > availableBalance) {
+          setValidationError(
+            `Insufficient balance. You have $${availableBalance.toFixed(2)} available but tried to send $${parsedAmount.toFixed(2)}.`
+          );
+          return;
+        }
+      }
+    } catch {
+      // If balance check fails, still allow the backend to enforce it
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     setLoading(true);
     setBannerStatus(null);
 
@@ -102,6 +126,13 @@ export default function SendTransactionsPage() {
       };
 
       const res = await api.sendMoney(payload);
+
+      // ── BUG FIX #1 (backend response handler) ──────────────────────────────
+      if (res.status === "INSUFFICIENT_BALANCE") {
+        setValidationError(res.error || "Insufficient balance for this transfer.");
+        return;
+      }
+      // ────────────────────────────────────────────────────────────────────────
 
       if (res.status === "ACCOUNT_FROZEN" || res.isFrozen) {
         setIsAccountFrozen(true);

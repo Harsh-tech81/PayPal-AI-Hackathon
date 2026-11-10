@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Disable Webpack packfile disk caching on Windows to prevent ENOENT rename crashes
+      config.cache = false;
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
