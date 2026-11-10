@@ -271,7 +271,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
         return;
       }
 
-      setEncryptionStatus(`Encrypting ${active.length} cognitive memory anchors with Web Crypto...`);
+      setEncryptionStatus(`Encrypting ${active.length} security questions with Web Crypto...`);
 
       // Run genuine client-side AES-256-GCM encryption in browser
       const encryptedPayloads = await Promise.all(
@@ -287,7 +287,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
         })
       );
 
-      setEncryptionStatus("Sealing Zero-Knowledge vault in MongoDB...");
+      setEncryptionStatus("Saving security questions in vault...");
 
       // Submit encrypted payload to backend
       const res = await api.setupIntentVault(encryptedPayloads);
@@ -299,10 +299,10 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
         return;
       }
 
-      setEncryptionStatus("Vault sealed! Hardware verification complete.");
+      setEncryptionStatus("Vault saved! Verification complete.");
       setSuccessMessage(
         res?.message ||
-          `${active.length} private cognitive anchors encrypted with AES-256-GCM and sealed into your vault!`
+          `${active.length} security questions encrypted with AES-256-GCM and saved into your vault!`
       );
 
       // Clean draft & mark completed
@@ -330,8 +330,8 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
     return (
       <div className="w-full max-w-3xl mx-auto bg-white/95 border border-slate-200/90 rounded-3xl p-10 shadow-luxury text-center">
         <RefreshCw className="w-8 h-8 animate-spin text-[#0070ba] mx-auto mb-3" />
-        <h3 className="font-extrabold text-slate-800 text-sm">Verifying Zero-Knowledge Vault Status...</h3>
-        <p className="text-xs text-slate-400 mt-1">Querying encrypted episodic memory vault...</p>
+        <h3 className="font-extrabold text-slate-800 text-sm">Checking Security Vault Status...</h3>
+        <p className="text-xs text-slate-400 mt-1">Loading saved security questions...</p>
       </div>
     );
   }
@@ -361,14 +361,14 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
 
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[10px] font-black uppercase tracking-wider mb-2.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Zero-Knowledge Vault Armed &amp; Sealed
+            Security Vault Sealed
           </span>
 
           <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-            Cognitive Shield Active
+            Security Protection Active
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-md mx-auto leading-relaxed">
-            Your personal episodic memory anchors are encrypted at rest with <strong>AES-256-GCM</strong> in an isolated MongoDB document vault.
+            Your personal security questions are encrypted at rest with <strong>AES-256-GCM</strong> in an isolated vault.
           </p>
         </div>
 
@@ -488,7 +488,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
       <div className="mb-8 pb-6 border-b border-slate-100">
         <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
           <span className="flex items-center gap-1.5 text-slate-700 font-extrabold">
-            <Lock className="w-3.5 h-3.5 text-[#0070ba]" /> PayShield Cognitive Intent Protocol
+            <Lock className="w-3.5 h-3.5 text-[#0070ba]" /> Security Questions Setup
           </span>
           <span className="text-[#0070ba] font-mono font-bold bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200/60">
             Step {currentStep} of 5
@@ -533,7 +533,7 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
           <div className="flex items-center gap-2">
             <Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
             <span>
-              <strong>Reconfiguring Vault:</strong> Loaded your previously saved memory answers for editing. Make your changes and re-seal when ready.
+              <strong>Editing Security Questions:</strong> Loaded your previously saved answers. Make your changes and save when ready.
             </span>
           </div>
           <button
@@ -552,17 +552,12 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
       {currentStep === 1 && (
         <div className="space-y-6">
           <div>
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
-              <Sparkles className="w-3 h-3 text-[#0070ba]" />
-              Cognitive Security Standard
-            </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-              Configure Your Zero-Knowledge Vault
+              Configure Your Security Questions Vault
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
-              When high-risk transactions occur, PayShield AI formulates dynamic riddles derived
-              strictly from your intimate human memories. Remote hackers, social engineering bots,
-              and session hijackers cannot guess them.
+              When high-risk transactions occur, PayPal presents dynamic questions derived
+              strictly from your private memories. Remote attackers and automated bots cannot guess them.
             </p>
           </div>
 
@@ -873,19 +868,18 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
               Web Crypto API • Authenticated Encryption
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight mt-1.5">
-              Zero-Knowledge Vault Sealing
+              Save &amp; Protect Security Questions
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-              Your personal episodic memories will be encrypted directly in your browser using{" "}
-              <strong>AES-256-GCM</strong> via the W3C Web Cryptography API before transmission to
-              the vault repository.
+              Your security answers will be encrypted directly in your browser using{" "}
+              <strong>AES-256-GCM</strong> via the W3C Web Cryptography API before saving.
             </p>
           </div>
 
           {/* Vault Contents Summary Box */}
           <div className="max-w-md mx-auto bg-slate-50 p-5 rounded-2xl border border-slate-200 text-left space-y-3">
             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-[#0070ba]" /> Cryptographic Vault Manifest
+              <Cpu className="w-3.5 h-3.5 text-[#0070ba]" /> Security Questions Summary
             </h4>
 
             <div className="space-y-2 text-xs font-medium text-slate-600">
@@ -895,19 +889,19 @@ export function IntentFormWizard({ onCompleted }: { onCompleted?: () => void }) 
                   <div key={cat.id} className="flex justify-between items-center py-1 border-b border-slate-200/50">
                     <span>{cat.title}</span>
                     <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      {count} Encrypted Anchors
+                      {count} Configured
                     </span>
                   </div>
                 );
               })}
 
               <div className="flex justify-between items-center pt-1 font-bold text-slate-900">
-                <span>Total Cognitive Anchors:</span>
+                <span>Total Questions Configured:</span>
                 <span className="font-mono text-[#0070ba]">
                   {getValidFilledCount("memory_anchors") +
                     getValidFilledCount("secret_habits") +
                     getValidFilledCount("pattern_sequences")}{" "}
-                  Anchors
+                  Questions
                 </span>
               </div>
             </div>

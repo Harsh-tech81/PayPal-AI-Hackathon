@@ -65,7 +65,7 @@ export async function encryptSecretClientSide(
   // 1. Import raw 32-byte master key
   const cryptoKey = await window.crypto.subtle.importKey(
     "raw",
-    rawKey.buffer,
+    rawKey as unknown as BufferSource,
     { name: "AES-GCM" },
     false,
     ["encrypt"]

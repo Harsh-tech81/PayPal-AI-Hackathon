@@ -54,13 +54,13 @@ export function ChallengeModal({
     if (isSubmitting || !answer.trim()) return;
 
     setIsSubmitting(true);
-    setStatusMessage("Google Gemini evaluating cognitive intent (< 400ms)...");
+    setStatusMessage("Verifying answer with AI security model...");
 
     const elapsed = Date.now() - startTimeRef.current;
     const res = await onSubmit(answer, elapsed, false);
 
     if (res?.status === "APPROVED" || res?.is_verified) {
-      setStatusMessage("Verified! Payment approved and funds moving.");
+      setStatusMessage("Identity verified! Payment authorized and processing.");
       setTimeout(() => {
         if (onSuccess) onSuccess(res);
         onClose();
@@ -94,40 +94,28 @@ export function ChallengeModal({
 
         {/* Top Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0070ba] text-xs font-black uppercase tracking-wider mb-2.5 shadow-sm">
-            <Brain className="w-4 h-4 text-[#0070ba]" />
-            <span>PayPal Cognitive Verification</span>
+          <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0070ba] shadow-sm">
+            <ShieldCheck className="w-6 h-6 text-[#0070ba]" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Security Question</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Security Check</h2>
           <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            Anomalous transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span> intercepted. Answer your private human memory prompt below to authorize at your own pace.
+            We noticed an unusual transfer of <span className="font-bold text-slate-900">${Number(challengeData.amount || 1200).toFixed(2)}</span>. Answer your private security question below to authorize this payment.
           </p>
         </div>
 
-        {/* User-Friendly Verification Guidance Badge */}
-        <div className="mb-5 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs font-bold text-slate-600">
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Self-Paced Cognitive Recall</span>
-          </span>
-          <span className="text-[11px] font-mono text-[#0070ba] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-            Untimed • User Friendly
-          </span>
-        </div>
-
-        {/* Dynamic Riddle Box */}
-        <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-100 shadow-sm relative overflow-hidden">
-          <div className="text-[11px] font-black text-[#0070ba] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Episodic Memory Recall Prompt</span>
+        {/* Security Question Box */}
+        <div className="mb-6 p-5 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-100/80 shadow-sm relative overflow-hidden">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5 text-slate-400" />
+            <span>Security Question</span>
           </div>
           <p className="text-base sm:text-lg font-black text-slate-950 leading-snug">
             "{challengeData.question || "What is your primary childhood family pet name or native hometown?"}"
           </p>
-          <div className="mt-3 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            <span>Enclave: AES-256</span>
-            <span className="text-[#0070ba] flex items-center gap-1">
-              <Cpu className="w-3 h-3" /> Cognitive Security Evaluator
+          <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Untimed • Self-paced</span>
+            <span className="text-[#0070ba] font-medium flex items-center gap-1">
+              Encrypted Vault Protected
             </span>
           </div>
         </div>
@@ -136,7 +124,7 @@ export function ChallengeModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">
-              Your Secret Answer (1–3 words):
+              Your Answer
             </label>
             <input
               ref={inputRef}
@@ -148,8 +136,7 @@ export function ChallengeModal({
               className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-[#0070ba] focus:ring-4 focus:ring-blue-500/10 rounded-2xl text-slate-950 placeholder-slate-400 font-bold text-base outline-none transition-all"
             />
             <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1.5 font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-[#0070ba] shrink-0" />
-              <span>Natural spelling tolerated. Evaluated semantically by Google Gemini in &lt; 400ms.</span>
+              <span>Natural spelling and variations accepted.</span>
             </p>
           </div>
 
@@ -168,7 +155,7 @@ export function ChallengeModal({
               className="w-full py-4 rounded-full font-bold text-sm bg-slate-950 hover:bg-neutral-800 active:scale-[0.99] text-white shadow-md hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
             >
               <CheckCircle2 className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span>Verify & Complete Payment</span>
+              <span>Verify & Authorize Transfer</span>
             </button>
 
             <button

@@ -31,22 +31,15 @@ export default function LoginPage() {
         <div className="flex items-baseline">
           <span className="font-black text-3xl text-[#003087] tracking-tight">Pay</span>
           <span className="font-black text-3xl text-[#0070ba] tracking-tight">Pal</span>
-          <span className="ml-2 text-[10px] font-black uppercase tracking-wider text-[#0070ba] px-2 py-0.5 rounded-full bg-blue-50/90 border border-blue-200/70 shadow-sm">
-            Shield AI
-          </span>
         </div>
       </Link>
 
       {/* Auth Card */}
       <div className="w-full max-w-md bg-white/95 border border-slate-200/90 rounded-3xl p-8 sm:p-10 shadow-luxury backdrop-blur-xl z-10 transition-all">
         <div className="text-center mb-7">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-[10px] font-black uppercase tracking-wider mb-3">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Cognitive Shield Ready
-          </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Log in to your account</h1>
           <p className="text-xs text-slate-500 mt-1.5">
-            Guarded by PayShield AI cognitive defense & zero-knowledge memory vault
+            Sign in to manage your balance, transfers, and security settings
           </p>
         </div>
 
