@@ -10,8 +10,8 @@
     "web-app"
   ],
   "scripts": {
-    "start": "tsx scripts/start-production.ts",
-    "start:production": "tsx scripts/start-production.ts",
+    "start": "npx tsx scripts/start-production.ts",
+    "start:production": "npx tsx scripts/start-production.ts",
     "start:txn": "tsx services/transaction-service/src/index.ts",
     "dev:services": "tsx watch services/user-service/src/index.ts & tsx watch services/transaction-service/src/index.ts & tsx watch services/verification-agent/src/index.ts & tsx watch services/risk-engine/src/index.ts & tsx watch services/alert-service/src/index.ts & tsx watch services/escalation-service/src/index.ts",
     "dev:web": "npm --prefix web-app run dev",
@@ -37,14 +37,14 @@
     "pg": "^8.23.1",
     "prisma": "^7.10.1",
     "twilio": "^5.3.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.0.0",
     "concurrently": "^10.0.6",
-    "tsx": "^4.19.2",
-    "typescript": "^5.6.3",
     "vitest": "^2.1.4"
   }
 }
