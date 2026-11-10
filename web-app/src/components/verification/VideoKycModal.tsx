@@ -10,10 +10,11 @@ import { verifyBiometricPasskey, registerBiometricPasskey, getStoredBiometricCre
 interface VideoKycModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  onVerified?: () => void;
 }
 
-export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps) {
+export function VideoKycModal({ isOpen, onClose, onSuccess, onVerified }: VideoKycModalProps) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<"ready" | "authenticating" | "verified" | "error">("ready");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -94,7 +95,8 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
 
       setStep("verified");
       setTimeout(() => {
-        onSuccess();
+        onSuccess?.();
+        onVerified?.();
       }, 1000);
     } catch (err: any) {
       console.warn("[Unfreeze Fallback]", err.message);
@@ -104,7 +106,8 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
       }
       setStep("verified");
       setTimeout(() => {
-        onSuccess();
+        onSuccess?.();
+        onVerified?.();
       }, 1000);
     }
   };
@@ -133,15 +136,11 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
           <ShieldCheck className="w-8 h-8" />
         </div>
 
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#0070ba] text-[10px] font-black uppercase tracking-wider mb-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#0070ba] animate-pulse" />
-          WebAuthn Account Recovery
-        </span>
         <h3 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-          Biometric Identity Verification
+          Identity Verification
         </h3>
         <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-          Verify physical possession of your registered device with Windows Hello, Touch ID, or Face ID to unfreeze your account.
+          Confirm your identity using your device passkey or biometric prompt to restore account access.
         </p>
 
         {/* Biometric Visualizer Box */}
@@ -173,10 +172,10 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
               <Laptop className="w-4 h-4 text-sky-400" />
               <span>
                 {step === "verified"
-                  ? "Biometrics Confirmed — Restoring Access"
+                  ? "Identity Confirmed — Restoring Access"
                   : step === "authenticating"
-                  ? "Awaiting Device Biometric Gesture..."
-                  : "Hardware Passkey Ready"}
+                  ? "Awaiting Device Confirmation..."
+                  : "Device Passkey Ready"}
               </span>
             </div>
 
@@ -184,8 +183,8 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
               {step === "verified"
                 ? "Account freeze lifted successfully!"
                 : step === "authenticating"
-                ? "Touch your fingerprint sensor or verify with Windows Hello / PIN"
-                : "Cryptographically bound to your device hardware security chip"}
+                ? "Touch your fingerprint sensor or verify with device lock"
+                : "Secure passkey verification"}
             </p>
           </div>
         </div>
@@ -209,8 +208,8 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
                 <Fingerprint className="w-5 h-5 text-sky-400 group-hover:scale-110 transition-transform" />
                 <span>
                   {step === "error"
-                    ? "Retry Biometric Scan"
-                    : "Verify with Device Biometrics (Windows Hello / Passkey)"}
+                    ? "Retry Verification"
+                    : "Verify Identity with Passkey"}
                 </span>
               </button>
 
@@ -220,7 +219,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
                 className="w-full py-2.5 rounded-full font-bold text-xs bg-sky-50 hover:bg-sky-100 text-[#0070ba] border border-sky-200/80 transition flex items-center justify-center gap-2 shadow-sm"
               >
                 <Smartphone className="w-4 h-4 text-[#0070ba]" />
-                <span>Register New Fingerprint Passkey on Android Phone</span>
+                <span>Set Up Passkey on this Device</span>
               </button>
 
               <button
@@ -229,7 +228,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess }: VideoKycModalProps
                 className="w-full py-2 rounded-full font-bold text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>Instant 1-Click Biometric Verification (Demo / Localhost)</span>
+                <span>Quick Verify (Demo Mode)</span>
               </button>
             </>
           )}

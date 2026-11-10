@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PayShield AI — Cognitive Payment Verification & Autonomous Defense for PayPal",
-  description: "Next-generation PayPal transaction protection powered by zero-knowledge episodic human memory and cognitive AI security reasoning.",
+  title: "PayPal — Secure Digital Wallet & Payments",
+  description: "Send payments securely, manage balances, and protect your account with advanced verification.",
 };
 
 export default function RootLayout({

@@ -79,7 +79,7 @@ export default function LockdownPage() {
             Account Temporarily Locked
           </h1>
           <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
-            PayShield AI intercepted an unauthorized payment attempt before any funds were transferred.
+            An unauthorized payment attempt was intercepted before any funds were transferred.
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export default function LockdownPage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500">Trigger Reason:</span>
-              <span className="text-rose-700 font-bold">Cognitive Memory Verification Mismatch</span>
+              <span className="text-rose-700 font-bold">Security Verification Failed</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-slate-500">PayPal Order Status:</span>
