@@ -22,8 +22,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center relative overflow-hidden">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white font-black text-2xl italic flex items-center justify-center shadow-glow-sm animate-pulse mb-4">
-          P
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white flex items-center justify-center shadow-glow-sm animate-pulse mb-4">
+          <ShieldCheck className="w-8 h-8 text-white" />
         </div>
         <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest">
           <span className="w-2 h-2 rounded-full bg-[#0070ba] animate-ping" />

@@ -46,7 +46,7 @@ export function VideoKycModal({ isOpen, onClose, onSuccess, onVerified }: VideoK
         const regRes = await registerBiometricPasskey({
           id: session?.user?.id || "owner-kyc-biometric",
           name: session?.user?.email || "owner@payshield.ai",
-          displayName: session?.user?.fullName || "PayPal Account Owner",
+          displayName: session?.user?.fullName || "PayShield Account Owner",
         });
 
         if (!regRes.success) {

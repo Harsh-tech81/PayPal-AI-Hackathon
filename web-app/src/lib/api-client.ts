@@ -158,7 +158,7 @@ export const api = {
     return safeJson(res);
   },
 
-  // Transactions & PayPal Interception
+  // Transactions & PayShield Interception
   async sendMoney(data: any) {
     const res = await fetch(`${TRANSACTION_SERVICE}/api/v1/transactions/send`, {
       method: "POST",

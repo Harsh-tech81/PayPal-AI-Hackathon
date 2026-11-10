@@ -379,7 +379,7 @@ export default function SendTransactionsPage() {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                  PayPal PayShield Guarantee
+                  PayShield Guarantee
                 </span>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                   {successReceipt.verificationType === "COGNITIVE" ? "VERIFIED" : "APPROVED"}
@@ -417,7 +417,7 @@ export default function SendTransactionsPage() {
 
             <div className="p-3.5 flex items-center justify-between">
               <span className="text-slate-500 font-semibold">Payment Method</span>
-              <span className="font-semibold text-slate-900">PayPal Verified Balance</span>
+              <span className="font-semibold text-slate-900">PayShield Verified Balance</span>
             </div>
 
             {successReceipt.description && (
@@ -605,7 +605,7 @@ export default function SendTransactionsPage() {
                     </>
                   ) : (
                     <>
-                      <span className="font-serif italic font-black text-2xl tracking-tighter">PayPal</span>
+                      <span className="font-serif italic font-black text-2xl tracking-tighter">PayShield</span>
                       <span className="font-bold text-base tracking-tight">
                         Send Payment {amount && !isNaN(parseFloat(amount)) ? `($${parseFloat(amount).toFixed(2)})` : ""}
                       </span>
@@ -616,7 +616,7 @@ export default function SendTransactionsPage() {
 
                 <p className="text-center text-[11px] text-slate-400 mt-3 flex items-center justify-center gap-1.5 font-medium">
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
-                  Protected by PayPal PayShield Security
+                  Protected by PayShield Security
                 </p>
               </div>
             </form>

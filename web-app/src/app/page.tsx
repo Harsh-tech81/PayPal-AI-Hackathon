@@ -37,14 +37,14 @@ export default function HomePage() {
       {/* Top Navbar */}
       <header className="h-20 border-b border-slate-200/80 px-6 sm:px-12 flex items-center justify-between max-w-7xl mx-auto w-full sticky top-0 bg-white/80 backdrop-blur-xl z-50 transition-all">
         <div className="flex items-center gap-10">
-          {/* PayPal Monogram Logo */}
+          {/* PayShield Monogram Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white font-black text-xl italic flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
-              P
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
+              <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div className="flex items-baseline">
               <span className="font-black text-2xl text-[#003087] tracking-tight">Pay</span>
-              <span className="font-black text-2xl text-[#0070ba] tracking-tight">Pal</span>
+              <span className="font-black text-2xl text-[#0070ba] tracking-tight">Shield</span>
             </div>
           </Link>
 
@@ -166,7 +166,7 @@ export default function HomePage() {
       <main className="flex-1 flex flex-col items-center justify-center px-6 pt-14 pb-20 max-w-6xl mx-auto w-full text-center relative z-10">
         {/* Hero Headline */}
         <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-slate-950 tracking-tight max-w-4xl leading-[1.08]">
-          Shine all season with <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#003087] via-[#0070ba] to-sky-500">PayPal</span>
+          Shine all season with <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#003087] via-[#0070ba] to-sky-500">PayShield</span>
         </h1>
 
         {/* Subtitle */}
@@ -309,7 +309,7 @@ export default function HomePage() {
               Multi-Channel Alert Defense
             </span>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Unauthorized transfers are voided instantly on PayPal, offending IPs are blocked, emergency SMS & email alerts are sent, and Video KYC enables fast biometric unfreezing.
+              Unauthorized transfers are voided instantly on PayShield, offending IPs are blocked, emergency SMS & email alerts are sent, and Video KYC enables fast biometric unfreezing.
             </p>
           </div>
         </div>
@@ -319,15 +319,15 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="mt-auto border-t border-slate-200/80 py-7 px-6 sm:px-12 bg-white/80 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 max-w-7xl mx-auto w-full text-xs text-slate-500">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-md bg-[#0070ba] text-white flex items-center justify-center font-black text-[10px] italic">
-            P
+          <div className="w-5 h-5 rounded-md bg-[#0070ba] text-white flex items-center justify-center shadow-sm">
+            <ShieldCheck className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="font-semibold text-slate-700">PayPal Security</span>
+          <span className="font-semibold text-slate-700">PayShield Security</span>
           <span>• Intelligent Payment Verification & Defense</span>
         </div>
         <div className="flex items-center gap-6 font-semibold text-slate-400 text-[11px]">
           <span className="flex items-center gap-1.5"><Lock className="w-3 h-3 text-emerald-600" /> End-to-End Encrypted</span>
-          <span className="flex items-center gap-1.5"><ShieldCheck className="w-3 h-3 text-[#0070ba]" /> Protected by PayPal</span>
+          <span className="flex items-center gap-1.5"><ShieldCheck className="w-3 h-3 text-[#0070ba]" /> Protected by PayShield</span>
         </div>
       </footer>
     </div>

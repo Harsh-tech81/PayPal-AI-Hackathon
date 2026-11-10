@@ -25,12 +25,12 @@ export default function LoginPage() {
 
       {/* Brand Monogram */}
       <Link href="/" className="flex items-center gap-3 mb-8 group z-10">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white font-black text-2xl italic flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
-          P
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#003087] to-[#0070ba] text-white flex items-center justify-center shadow-glow-sm group-hover:scale-105 group-hover:shadow-glow-md transition-all duration-300">
+          <ShieldCheck className="w-6 h-6 text-white" />
         </div>
         <div className="flex items-baseline">
           <span className="font-black text-3xl text-[#003087] tracking-tight">Pay</span>
-          <span className="font-black text-3xl text-[#0070ba] tracking-tight">Pal</span>
+          <span className="font-black text-3xl text-[#0070ba] tracking-tight">Shield</span>
         </div>
       </Link>
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
           <p className="text-xs text-slate-500 font-medium">
             Don't have an account?{" "}
             <Link href="/register" className="text-[#0070ba] font-bold hover:underline ml-1">
-              Sign Up for PayPal &rarr;
+              Sign Up for PayShield &rarr;
             </Link>
           </p>
         </div>

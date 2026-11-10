@@ -113,13 +113,13 @@ export async function registerBiometricPasskey(userInfo?: {
       publicKey: {
         challenge,
         rp: {
-          name: "PayPal PayShield AI",
+          name: "PayShield AI",
           id: typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "localhost",
         },
         user: {
           id: userIdBytes,
           name: userInfo?.name || "security@payshield.ai",
-          displayName: userInfo?.displayName || "PayPal Account Owner",
+          displayName: userInfo?.displayName || "PayShield Account Owner",
         },
         pubKeyCredParams: [
           { alg: -7, type: "public-key" },   // ES256 (standard biometrics)
