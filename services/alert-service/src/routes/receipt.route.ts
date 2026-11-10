@@ -18,17 +18,31 @@ export async function receiptRoutes(fastify: FastifyInstance) {
 
       let toEmail = body.senderEmail || "";
 
-      // Look up sender's email from database if not explicitly passed
-      if (!toEmail) {
+      // ── BUG FIX #3 & #4: Only send receipt to the verified sender, never
+      // to the recipient email typed in the payment form.
+      // The recipient's email (body.recipientEmail) is ONLY used in the email
+      // body text to show who the payment was sent TO — it must NEVER become
+      // the delivery address.
+      //
+      // We look up the sender strictly by userId. We NO LONGER fall back to
+      // "most recently created user" (prisma.user.findFirst) because that
+      // could accidentally resolve to the recipient if they registered recently.
+      // ────────────────────────────────────────────────────────────────────────
+      if (!toEmail && body.userId) {
         try {
-          let user = body.userId ? await prisma.user.findUnique({ where: { id: body.userId } }) : null;
-          if (!user) {
-            user = await prisma.user.findFirst({ orderBy: { createdAt: "desc" } });
+          const user = await prisma.user.findUnique({ where: { id: body.userId } });
+          if (user?.email && !user.email.includes("example.com")) {
+            toEmail = user.email;
           }
-          if (user?.email && !user.email.includes("example.com")) toEmail = user.email;
         } catch (dbErr: any) {
           fastify.log.warn(`[Receipt User Lookup Notice] ${dbErr.message}`);
         }
+      }
+
+      // Safety guard: never send the receipt to the recipient's email address
+      if (toEmail && toEmail.trim().toLowerCase() === (body.recipientEmail || "").trim().toLowerCase()) {
+        fastify.log.warn(`[Receipt Safety] Prevented sending receipt to recipient email (${toEmail}). Routing to fallback.`);
+        toEmail = "";
       }
 
       if (!toEmail || toEmail.includes("example.com")) {

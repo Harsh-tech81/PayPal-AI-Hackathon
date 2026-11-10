@@ -110,6 +110,23 @@ export const userRepository = {
     }
   },
 
+  async updateIntentCleared(userId: string) {
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { intentFormCompleted: false },
+      });
+    } catch (err: any) {
+      console.warn(`[User Repo DB Notice] updateIntentCleared: ${err.message}`);
+    }
+    for (const [k, u] of memoryUsers.entries()) {
+      if (u.id === userId) {
+        u.intentFormCompleted = false;
+        memoryUsers.set(k, u);
+      }
+    }
+  },
+
   async unfreezeUser(userId: string) {
     try {
       await prisma.user.update({
